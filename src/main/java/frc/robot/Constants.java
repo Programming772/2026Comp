@@ -25,10 +25,6 @@ public final class Constants {
 
 
   public final class SwerveConstants {
-    // maximum speeds for the 2 phases of the match
-    public static final double maxTeleSpeed = 0.65;
-    public static final double maxAutoSpeed = 1;
-
     public static final double maxVelocity = 4;
     public static final double maxAcceleration = 1;
     public static final double maxAngularVelocity = 2 * Math.PI;
@@ -44,7 +40,7 @@ public final class Constants {
       public static final int frontLeftPropulsionID = 1;
       public static final int frontLeftTurningID = 2;
       public static final int frontLeftCANCoderID = 3;
-      public static final Angle frontLeftCANCoderOffset = Rotations.of(0.374267578125);;
+      public static final Angle frontLeftCANCoderOffset = Rotations.of(0);
     }
 
     // constants for front right module
@@ -52,7 +48,7 @@ public final class Constants {
       public static final int frontRightPropulsionID = 4;
       public static final int frontRightTurningID = 5;
       public static final int frontRightCANCoderID = 6;
-      public static final Angle frontRightCANCoderOffset = Rotations.of(-0.101806640625);;
+      public static final Angle frontRightCANCoderOffset = Rotations.of(-0.3515625);
     }
 
     // constants for back left module
@@ -60,7 +56,7 @@ public final class Constants {
       public static final int backLeftPropulsionID = 7;
       public static final int backLeftTurningID = 8;
       public static final int backLeftCANCoderID = 9;
-      public static final Angle backLeftCANCoderOffset = Rotations.of(0.14013671875);
+      public static final Angle backLeftCANCoderOffset = Rotations.of(1.142578125);
     }
 
     // constants for back right module
@@ -68,7 +64,7 @@ public final class Constants {
       public static final int backRightPropulsionID = 10;
       public static final int backRightTurningID = 11;
       public static final int backRightCANCoderID = 12;
-      public static final Angle backRightCANCoderOffset = Rotations.of(-0.2001953125);
+      public static final Angle backRightCANCoderOffset = Rotations.of(0.52734375);
     }
 
     // propulsion PID coefficients
@@ -78,11 +74,11 @@ public final class Constants {
 
     // propulsion FF coefficients
     public static final double propulsionFFka = 0.0;
-    public static final double propulsionFFks = 0.0;
+    public static final double propulsionFFks = 0.255;
     public static final double propulsionFFkv = 0.0;
 
     // turning PID coefficients
-    public static final double turningPIDkp = 1;
+    public static final double turningPIDkp = 3;
     public static final double turningPIDki = 0.0;
     public static final double turningPIDkd = 0;
     
@@ -97,10 +93,10 @@ public final class Constants {
 
     // creates a SwerveDriveKinematics object using the locations of the modules relative to centre of the robot
     public static final SwerveDriveKinematics driveKinematics = new SwerveDriveKinematics (
-      new Translation2d(kWheelBase / 2, -kTrackWidth / 2),  // front right module
       new Translation2d(kWheelBase / 2, kTrackWidth / 2),   // front left module
-      new Translation2d(-kWheelBase / 2, -kTrackWidth / 2), // back right module
-      new Translation2d(-kWheelBase / 2, kTrackWidth / 2)   // back left module
+      new Translation2d(kWheelBase / 2, -kTrackWidth / 2),  // front right module
+      new Translation2d(-kWheelBase / 2, kTrackWidth / 2),  // back left module
+      new Translation2d(-kWheelBase / 2, -kTrackWidth / 2)  // back right module
     );
   }
 

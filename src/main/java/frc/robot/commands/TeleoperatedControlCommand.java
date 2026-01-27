@@ -38,21 +38,26 @@ public class TeleoperatedControlCommand extends Command {
   // Called every time the scheduler runs while the command is scheduled.
   @Override
   public void execute() {
-    // gets the speeds from the joystick inputs
-    double xSpeed = xSpeedSupplier.getAsDouble();
-    double ySpeed = ySpeedSupplier.getAsDouble();
-    double thetaSpeed = thetaSpeedSupplier.getAsDouble();
-
     // gets the absolute values of the speeds, sets them to 0 if too slow
-    xSpeed = Math.abs(xSpeed) > deadband ? xSpeed : 0.0;
-    ySpeed = Math.abs(ySpeed) > deadband ? ySpeed : 0.0;
-    thetaSpeed = Math.abs(thetaSpeed) > deadband ? thetaSpeed : 0.0;
+    double xSpeed = Math.abs(xSpeedSupplier.getAsDouble()) > deadband ? xSpeedSupplier.getAsDouble() : 0.0;
+    double ySpeed = Math.abs(ySpeedSupplier.getAsDouble()) > deadband ? ySpeedSupplier.getAsDouble() : 0.0;
+    double thetaSpeed = Math.abs(thetaSpeedSupplier.getAsDouble()) > deadband ? thetaSpeedSupplier.getAsDouble() : 0.0;
+
+    xSpeed = Math.copySign(xSpeed * xSpeed, xSpeed);
+    ySpeed = Math.copySign(ySpeed * ySpeed, ySpeed);
+    thetaSpeed = Math.copySign(thetaSpeed * thetaSpeed, thetaSpeed);
+
+
+    // gets the speeds from the joystick inputs
+    xSpeed *= Constants.SwerveConstants.maxVelocity;
+    ySpeed *= Constants.SwerveConstants.maxVelocity;
+    thetaSpeed *= Constants.SwerveConstants.maxAngularVelocity;
 
     ChassisSpeeds chassisSpeeds;
 
     // creates speeds relative to the wanted robot orientation
     if (fieldOrientedSupplier.getAsBoolean()) {
-      chassisSpeeds = ChassisSpeeds.fromFieldRelativeSpeeds(xSpeed, ySpeed, thetaSpeed, SwerveDriveSubsystem.getRotation());
+      chassisSpeeds = ChassisSpeeds.fromFieldRelativeSpeeds(xSpeed, ySpeed, thetaSpeed, swerveSubsystem.getRotation());
     } else {
       chassisSpeeds = new ChassisSpeeds(xSpeed, ySpeed, thetaSpeed);
     }
@@ -63,7 +68,7 @@ public class TeleoperatedControlCommand extends Command {
     SwerveModuleState[] moduleStates = Constants.SwerveConstants.driveKinematics.toSwerveModuleStates(discretizedSpeeds);
     
     // applies the swerve module states to the swerve drive
-    swerveSubsystem.setModuleStates(moduleStates);
+    swerveSubsystem.setModuleStates(moduleStates, discretizedSpeeds.omegaRadiansPerSecond);
   }
 
   // Called once the command ends or is interrupted.

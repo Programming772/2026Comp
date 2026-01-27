@@ -30,27 +30,6 @@ import frc.robot.Constants;
 
 public class SwerveDriveSubsystem extends SubsystemBase {
   private static final SwerveModuleSubsystem [] modules = {
-    // makes a SwerveModuleSubsystem for the back left module
-    new SwerveModuleSubsystem(
-      Constants.SwerveConstants.BackLeftConstants.backLeftPropulsionID, 
-      Constants.SwerveConstants.BackLeftConstants.backLeftTurningID, 
-      Constants.SwerveConstants.BackLeftConstants.backLeftCANCoderID, 
-      Constants.SwerveConstants.BackLeftConstants.backLeftCANCoderOffset, 
-      false,
-      InvertedValue.Clockwise_Positive,
-      InvertedValue.CounterClockwise_Positive
-    ),
-    // makes a SwerveModuleSubsystem for the back right module
-    new SwerveModuleSubsystem(
-      Constants.SwerveConstants.BackRightConstants.backRightPropulsionID, 
-      Constants.SwerveConstants.BackRightConstants.backRightTurningID, 
-      Constants.SwerveConstants.BackRightConstants.backRightCANCoderID, 
-      Constants.SwerveConstants.BackRightConstants.backRightCANCoderOffset, 
-      false,
-      InvertedValue.CounterClockwise_Positive,
-      InvertedValue.CounterClockwise_Positive
-    ),
-
     // makes a SwerveModuleSubsystem for the front left module
     new SwerveModuleSubsystem(
       Constants.SwerveConstants.FrontLeftConstants.frontLeftPropulsionID, 
@@ -70,6 +49,26 @@ public class SwerveDriveSubsystem extends SubsystemBase {
       false,
       InvertedValue.CounterClockwise_Positive,
       InvertedValue.CounterClockwise_Positive
+    ),
+    // makes a SwerveModuleSubsystem for the back left module
+    new SwerveModuleSubsystem(
+      Constants.SwerveConstants.BackLeftConstants.backLeftPropulsionID, 
+      Constants.SwerveConstants.BackLeftConstants.backLeftTurningID, 
+      Constants.SwerveConstants.BackLeftConstants.backLeftCANCoderID, 
+      Constants.SwerveConstants.BackLeftConstants.backLeftCANCoderOffset, 
+      false,
+      InvertedValue.Clockwise_Positive,
+      InvertedValue.CounterClockwise_Positive
+    ),
+    // makes a SwerveModuleSubsystem for the back right module
+    new SwerveModuleSubsystem(
+      Constants.SwerveConstants.BackRightConstants.backRightPropulsionID, 
+      Constants.SwerveConstants.BackRightConstants.backRightTurningID, 
+      Constants.SwerveConstants.BackRightConstants.backRightCANCoderID, 
+      Constants.SwerveConstants.BackRightConstants.backRightCANCoderOffset, 
+      false,
+      InvertedValue.CounterClockwise_Positive,
+      InvertedValue.CounterClockwise_Positive
     )
   };
 
@@ -78,7 +77,7 @@ public class SwerveDriveSubsystem extends SubsystemBase {
   private RobotConfig config;
   
   // makes pigeon - note to do the calibration
-  public final static Pigeon2 gyro = new Pigeon2(13);
+  public final Pigeon2 gyro = new Pigeon2(13);
   public static Field2d field = new Field2d();
 
   // timer for getting samples of paths
@@ -87,7 +86,7 @@ public class SwerveDriveSubsystem extends SubsystemBase {
   private boolean slowDown = false;
   
   // creates a pose estimator object to get the position of the robot relative to the field
-  public static final SwerveDrivePoseEstimator poseEstimator = new SwerveDrivePoseEstimator(
+  public final SwerveDrivePoseEstimator poseEstimator = new SwerveDrivePoseEstimator(
     Constants.SwerveConstants.driveKinematics,
     getRotation(),
     new SwerveModulePosition[] {
@@ -164,18 +163,22 @@ public class SwerveDriveSubsystem extends SubsystemBase {
   }
   
   
-  public void setModuleStates (SwerveModuleState[] states) {
-    // tells each module to go to the prefered state (speeds and rotation)
+  public void setModuleStates(SwerveModuleState[] states, double omegaRadPerSec) {
     if (slowDown) {
-      SwerveDriveKinematics.desaturateWheelSpeeds(states, 0.1);
+      SwerveDriveKinematics.desaturateWheelSpeeds(
+        states, Constants.SwerveConstants.maxVelocity * 0.1
+      );
     } else {
-      SwerveDriveKinematics.desaturateWheelSpeeds(states, Constants.SwerveConstants.maxTeleSpeed);
+      SwerveDriveKinematics.desaturateWheelSpeeds(
+        states, Constants.SwerveConstants.maxVelocity * 0.3
+      );
     }
 
-    // sets the state for all modules
-    for (int i = 0; i < 4; i++)
-      modules[i].setState(states[i]);
+    for (int i = 0; i < 4; i++) {
+      modules[i].setState(states[i], omegaRadPerSec);
+    }
   }
+
   
   
   public void stopSwerveDrive() {
@@ -185,9 +188,10 @@ public class SwerveDriveSubsystem extends SubsystemBase {
   }
   
   
-  public static Rotation2d getRotation() {
+  public Rotation2d getRotation() {
     // returns the radian rotation of the gyro
-    return new Rotation2d(Units.degreesToRadians((gyro.getYaw().getValueAsDouble()) % 360));
+    return Rotation2d.fromDegrees(gyro.getYaw().getValueAsDouble());
+
   }
 
 
@@ -245,15 +249,22 @@ public class SwerveDriveSubsystem extends SubsystemBase {
 
 
   public void setSpeeds(ChassisSpeeds speeds) {
-    // ChassisSpeeds discretizedSpeeds = ChassisSpeeds.discretize(speeds, 0.02);
+    SwerveModuleState[] states =
+      Constants.SwerveConstants.driveKinematics
+        .toSwerveModuleStates(speeds);
 
-    SwerveModuleState[] states = Constants.SwerveConstants.driveKinematics.toSwerveModuleStates(speeds);
-    SwerveDriveKinematics.desaturateWheelSpeeds(states, Constants.SwerveConstants.maxAutoSpeed);
+    SwerveDriveKinematics.desaturateWheelSpeeds(
+      states, Constants.SwerveConstants.maxVelocity
+    );
 
-    // sets the state for all modules
-    for (int i = 0; i < 4; i++)
-      modules[i].setState(states[i]);
+    for (int i = 0; i < 4; i++) {
+      modules[i].setState(
+        states[i],
+        speeds.omegaRadiansPerSecond
+      );
+    }
   }
+
 
 
   public void slowSpeed() {

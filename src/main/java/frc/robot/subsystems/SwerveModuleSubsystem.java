@@ -5,6 +5,7 @@
 package frc.robot.subsystems;
 
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
@@ -32,12 +33,12 @@ public class SwerveModuleSubsystem extends SubsystemBase {
   public CANcoder m_encoder;
   public Angle m_encoderOffset;
   public boolean m_encoderReversed;
+  private double lastAngleRotations = 0.0;
+
 
   public PIDController propulsionPID = new PIDController(SwerveConstants.propulsionPIDkp, SwerveConstants.propulsionPIDki, SwerveConstants.propulsionPIDkd);
-  public ProfiledPIDController turningPID = new ProfiledPIDController(SwerveConstants.turningPIDkp, SwerveConstants.turningPIDki, SwerveConstants.turningPIDkd, new TrapezoidProfile.Constraints(SwerveConstants.maxAngularVelocity, SwerveConstants.maxAngularAcceleration));
 
   public SimpleMotorFeedforward propulsionFF = new SimpleMotorFeedforward(SwerveConstants.propulsionFFks, SwerveConstants.propulsionFFkv, SwerveConstants.propulsionFFka);
-  public SimpleMotorFeedforward turningFF = new SimpleMotorFeedforward(SwerveConstants.turningFFks, SwerveConstants.turningFFkv, SwerveConstants.turningFFka);
 
   public SwerveModuleSubsystem(int propulsionMotorID, int turningMotorID, int encoderID, Angle encoderOffset,
       boolean encoderReversed, InvertedValue driveInverted, InvertedValue turningInverted) {
@@ -62,7 +63,14 @@ public class SwerveModuleSubsystem extends SubsystemBase {
     turningConfig.Voltage.PeakForwardVoltage = 12.0;
     turningConfig.Voltage.PeakReverseVoltage = -12.0;
     turningConfig.Feedback.FeedbackRemoteSensorID = encoderID;
-    turningConfig.Feedback.FeedbackSensorSource = FeedbackSensorSourceValue.FusedCANcoder;
+    turningConfig.Feedback.FeedbackSensorSource = FeedbackSensorSourceValue.RemoteCANcoder;
+    turningConfig.Slot0.kP = 30.0;
+    turningConfig.Slot0.kI = 0.0;
+    turningConfig.Slot0.kD = 0.5;
+    turningConfig.Slot0.kS = 0.15;
+    turningConfig.ClosedLoopRamps.VoltageClosedLoopRampPeriod = 0.05;
+
+
 
     // applies the configs to the motors
     m_propulsionMotor.getConfigurator().apply(new TalonFXConfiguration());
@@ -75,10 +83,10 @@ public class SwerveModuleSubsystem extends SubsystemBase {
     m_encoderOffset = encoderOffset;
     m_encoderReversed = encoderReversed;
 
-    // makes a PID controller for turning module
-    turningPID.enableContinuousInput(-Math.PI, Math.PI);
+    m_turningMotor.setPosition(
+      m_encoder.getAbsolutePosition().getValueAsDouble()
+    );
 
-    resetEncoders();
   }
 
   @Override
@@ -107,7 +115,10 @@ public class SwerveModuleSubsystem extends SubsystemBase {
 
   public Rotation2d getCANCoder() {
     // returns the position of the absolute encoder in radians
-    return Rotation2d.fromRotations((m_encoder.getAbsolutePosition().getValueAsDouble()) * (m_encoderReversed ? -1 : 1) - m_encoderOffset.in(Units.Rotations));
+    return Rotation2d.fromRotations((m_encoder.getAbsolutePosition().getValueAsDouble()) * (m_encoderReversed ? -1 : 1));
+    // return Rotation2d.fromRotations(
+    //   m_encoder.getAbsolutePosition().getValueAsDouble()
+    // );
   }
 
   public double getCanCoderVelocity() {
@@ -117,7 +128,6 @@ public class SwerveModuleSubsystem extends SubsystemBase {
   public void resetEncoders() {
     // sets encoders to 0
     m_propulsionMotor.setPosition(0);
-    m_turningMotor.setPosition(getCANCoder().getRotations());
   }
 
   public SwerveModuleState getState() {
@@ -130,31 +140,45 @@ public class SwerveModuleSubsystem extends SubsystemBase {
     return new SwerveModulePosition(getPropulsionPosition(), getCANCoder());
   }
 
-  private SwerveModuleState optimizeState(SwerveModuleState desired, Rotation2d currentAngle) {
-    double delta = MathUtil.angleModulus(desired.angle.minus(currentAngle).getRadians());
+  public void setState(SwerveModuleState state, double omegaRadPerSec) {
 
-    // If rotating more than 90°, flip wheel direction
-    if (Math.abs(delta) > Math.PI / 2.0) {
-      return new SwerveModuleState(-desired.speedMetersPerSecond, desired.angle.plus(Rotation2d.fromRadians(Math.PI)));
+    boolean stopped =
+        Math.abs(state.speedMetersPerSecond) < 0.05 &&
+        Math.abs(omegaRadPerSec) < 0.05;
+
+    if (stopped) {
+        // HOLD last angle ONLY when fully stopped
+        m_turningMotor.setControl(
+            new PositionVoltage(lastAngleRotations)
+        );
+        m_propulsionMotor.setVoltage(0);
+        return;
     }
 
-    return desired;
-  }
+    double currentRot = m_turningMotor.getPosition().getValueAsDouble();
+    double targetRot = state.angle.getRotations();
 
-  public void setState(SwerveModuleState state) {
-    // optimizes the rotation to the prefered angle
-    state = optimizeState(state, getCANCoder());
-    state.speedMetersPerSecond *= Math.cos(state.angle.minus(getCANCoder()).getRadians());
+    double delta = targetRot - currentRot;
+    delta = MathUtil.inputModulus(delta, -0.5, 0.5);
 
-    if (Math.abs(state.speedMetersPerSecond) < 0.001) {
-      m_propulsionMotor.setVoltage(0);
-      return;
+    // flip only while moving
+    if (Math.abs(delta) > 0.25) {
+        delta -= Math.signum(delta) * 0.5;
+        state = new SwerveModuleState(
+            -state.speedMetersPerSecond,
+            state.angle
+        );
     }
+
+    double unwrappedTarget = currentRot + delta;
+    lastAngleRotations = unwrappedTarget;
+
+    m_turningMotor.setControl(new PositionVoltage(unwrappedTarget));
 
     propulsionPID.setSetpoint(state.speedMetersPerSecond);
-    turningPID.setGoal(state.angle.getRadians());
-
-    m_propulsionMotor.setVoltage(propulsionPID.calculate(getPropulsionVelocity()) + propulsionFF.calculate(state.speedMetersPerSecond));
-    m_turningMotor.setVoltage(turningPID.calculate(getCANCoder().getRadians()));
+    m_propulsionMotor.setVoltage(
+        propulsionPID.calculate(getPropulsionVelocity())
+        + propulsionFF.calculate(state.speedMetersPerSecond)
+    );
   }
 }
