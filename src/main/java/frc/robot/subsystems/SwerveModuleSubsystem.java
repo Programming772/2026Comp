@@ -63,12 +63,14 @@ public class SwerveModuleSubsystem extends SubsystemBase {
     turningConfig.Voltage.PeakForwardVoltage = 12.0;
     turningConfig.Voltage.PeakReverseVoltage = -12.0;
     turningConfig.Feedback.FeedbackRemoteSensorID = encoderID;
-    turningConfig.Feedback.FeedbackSensorSource = FeedbackSensorSourceValue.RemoteCANcoder;
+    turningConfig.Feedback.FeedbackSensorSource = FeedbackSensorSourceValue.FusedCANcoder;
     turningConfig.Slot0.kP = 30.0;
     turningConfig.Slot0.kI = 0.0;
     turningConfig.Slot0.kD = 0.5;
     turningConfig.Slot0.kS = 0.15;
     turningConfig.ClosedLoopRamps.VoltageClosedLoopRampPeriod = 0.05;
+    turningConfig.Feedback.RotorToSensorRatio = SwerveConstants.kSteerGearRatio;
+    
 
 
 
@@ -82,6 +84,7 @@ public class SwerveModuleSubsystem extends SubsystemBase {
     m_encoder = new CANcoder(encoderID);
     m_encoderOffset = encoderOffset;
     m_encoderReversed = encoderReversed;
+    
 
     m_turningMotor.setPosition(
       m_encoder.getAbsolutePosition().getValueAsDouble()
@@ -119,6 +122,10 @@ public class SwerveModuleSubsystem extends SubsystemBase {
     // return Rotation2d.fromRotations(
     //   m_encoder.getAbsolutePosition().getValueAsDouble()
     // );
+  }
+
+  public Rotation2d getTurnPosition() {
+    return Rotation2d.fromRotations((m_turningMotor.getPosition().getValueAsDouble()));
   }
 
   public double getCanCoderVelocity() {

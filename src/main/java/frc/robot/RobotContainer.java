@@ -29,6 +29,8 @@ public class RobotContainer {
 
   Trigger climbToggle = new JoystickButton(driverController, 1);
 
+  Trigger slow = new JoystickButton(driverController, 6);
+
   public RobotContainer() {
     climber.set(Value.kForward);
 
@@ -37,7 +39,7 @@ public class RobotContainer {
       () -> !driverController.getRawButton(7),
       () -> driverController.getRawAxis(1),
       () -> driverController.getRawAxis(0),
-      () -> -driverController.getRawAxis(4)
+      () -> driverController.getRawAxis(4)
     )); 
 
     configureBindings();
@@ -45,6 +47,7 @@ public class RobotContainer {
 
   private void configureBindings() {
     climbToggle.onTrue(new InstantCommand(() -> climber.toggle()));
+    slow.whileTrue(new InstantCommand(() -> swerveSubsystem.slowSpeed())).onFalse(new InstantCommand(() -> swerveSubsystem.regularSpeed()));
   }
 
   public Command getAutonomousCommand() {

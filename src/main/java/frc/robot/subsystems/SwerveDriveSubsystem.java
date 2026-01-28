@@ -166,11 +166,11 @@ public class SwerveDriveSubsystem extends SubsystemBase {
   public void setModuleStates(SwerveModuleState[] states, double omegaRadPerSec) {
     if (slowDown) {
       SwerveDriveKinematics.desaturateWheelSpeeds(
-        states, Constants.SwerveConstants.maxVelocity * 0.1
+        states, (Constants.SwerveConstants.maxVelocity * 0.3)
       );
     } else {
       SwerveDriveKinematics.desaturateWheelSpeeds(
-        states, Constants.SwerveConstants.maxVelocity * 0.3
+        states, Constants.SwerveConstants.maxVelocity
       );
     }
 
@@ -253,9 +253,15 @@ public class SwerveDriveSubsystem extends SubsystemBase {
       Constants.SwerveConstants.driveKinematics
         .toSwerveModuleStates(speeds);
 
-    SwerveDriveKinematics.desaturateWheelSpeeds(
-      states, Constants.SwerveConstants.maxVelocity
-    );
+    if (slowDown) {
+      SwerveDriveKinematics.desaturateWheelSpeeds(
+        states, Constants.SwerveConstants.maxVelocity * 0.3
+      );
+    } else {
+      SwerveDriveKinematics.desaturateWheelSpeeds(
+        states, Constants.SwerveConstants.maxVelocity
+      );
+    }
 
     for (int i = 0; i < 4; i++) {
       modules[i].setState(
@@ -265,12 +271,9 @@ public class SwerveDriveSubsystem extends SubsystemBase {
     }
   }
 
-
-
   public void slowSpeed() {
     slowDown = true;
   }
-
 
   public void regularSpeed() {
     slowDown = false;

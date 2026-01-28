@@ -74,8 +74,8 @@ public final class Constants {
 
     // propulsion FF coefficients
     public static final double propulsionFFka = 0.0;
-    public static final double propulsionFFks = 0.255;
-    public static final double propulsionFFkv = 0.0;
+    public static final double propulsionFFks = 0.3;
+    public static final double propulsionFFkv = 6;
 
     // turning PID coefficients
     public static final double turningPIDkp = 3;
