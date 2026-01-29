@@ -37,9 +37,9 @@ public class RobotContainer {
     swerveSubsystem.setDefaultCommand(new TeleoperatedControlCommand(
       swerveSubsystem,
       () -> !driverController.getRawButton(7),
-      () -> driverController.getRawAxis(1),
       () -> driverController.getRawAxis(0),
-      () -> driverController.getRawAxis(4)
+      () -> driverController.getRawAxis(1),
+      () -> -driverController.getRawAxis(4)
     )); 
 
     configureBindings();

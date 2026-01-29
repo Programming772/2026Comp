@@ -58,7 +58,7 @@ public class SwerveModuleSubsystem extends SubsystemBase {
     TalonFXConfiguration turningConfig = new TalonFXConfiguration();
     turningConfig.CurrentLimits.StatorCurrentLimit = 50;
     turningConfig.CurrentLimits.SupplyCurrentLimit = 70;
-    turningConfig.MotorOutput.NeutralMode = NeutralModeValue.Coast;
+    turningConfig.MotorOutput.NeutralMode = NeutralModeValue.Brake;
     turningConfig.MotorOutput.Inverted = turningInverted;
     turningConfig.Voltage.PeakForwardVoltage = 12.0;
     turningConfig.Voltage.PeakReverseVoltage = -12.0;
@@ -86,16 +86,21 @@ public class SwerveModuleSubsystem extends SubsystemBase {
     m_encoderReversed = encoderReversed;
     
 
-    m_turningMotor.setPosition(
-      m_encoder.getAbsolutePosition().getValueAsDouble()
-    );
-
+    resetToAbsolute();
   }
 
   @Override
   public void periodic() {
     // This method will be called once per scheduler run
-    SmartDashboard.putNumber("SwerveModule [" + m_encoder.getDeviceID() + "]", getCANCoder().getDegrees());
+    SmartDashboard.putNumber("SwerveModule [" + m_encoder.getDeviceID() + "]", getCANCoder().getRotations());
+  }
+
+  public void resetToAbsolute() {
+    double absoluteRotations =
+        (m_encoder.getAbsolutePosition().getValueAsDouble()
+        * (m_encoderReversed ? -1 : 1));
+
+    m_turningMotor.setPosition(absoluteRotations);
   }
 
   public double getPropulsionPosition() {
@@ -119,9 +124,6 @@ public class SwerveModuleSubsystem extends SubsystemBase {
   public Rotation2d getCANCoder() {
     // returns the position of the absolute encoder in radians
     return Rotation2d.fromRotations((m_encoder.getAbsolutePosition().getValueAsDouble()) * (m_encoderReversed ? -1 : 1));
-    // return Rotation2d.fromRotations(
-    //   m_encoder.getAbsolutePosition().getValueAsDouble()
-    // );
   }
 
   public Rotation2d getTurnPosition() {
@@ -149,12 +151,13 @@ public class SwerveModuleSubsystem extends SubsystemBase {
 
   public void setState(SwerveModuleState state, double omegaRadPerSec) {
 
+    // ---------------- STOP DETECTION ----------------
     boolean stopped =
         Math.abs(state.speedMetersPerSecond) < 0.05 &&
         Math.abs(omegaRadPerSec) < 0.05;
 
     if (stopped) {
-        // HOLD last angle ONLY when fully stopped
+        // Hold last angle ONLY when fully stopped
         m_turningMotor.setControl(
             new PositionVoltage(lastAngleRotations)
         );
@@ -162,30 +165,49 @@ public class SwerveModuleSubsystem extends SubsystemBase {
         return;
     }
 
+    // ---------------- CURRENT / TARGET ----------------
     double currentRot = m_turningMotor.getPosition().getValueAsDouble();
-    double targetRot = state.angle.getRotations();
+    double targetRot  = state.angle.getRotations();
 
+    // Find shortest path (-0.5 to +0.5 rotations)
     double delta = targetRot - currentRot;
     delta = MathUtil.inputModulus(delta, -0.5, 0.5);
 
-    // flip only while moving
-    if (Math.abs(delta) > 0.25) {
+    // ---------------- FLIP LOGIC (ONLY WHILE MOVING) ----------------
+    if (Math.abs(delta) > 0.25) { // > 90 degrees
         delta -= Math.signum(delta) * 0.5;
+
         state = new SwerveModuleState(
             -state.speedMetersPerSecond,
-            state.angle
+            state.angle.plus(Rotation2d.fromRotations(0.5))
         );
     }
 
+    // ---------------- UNWRAP TARGET ----------------
     double unwrappedTarget = currentRot + delta;
     lastAngleRotations = unwrappedTarget;
 
-    m_turningMotor.setControl(new PositionVoltage(unwrappedTarget));
+    // ---------------- ANGLE DEADZONE ----------------
+    double angleError = unwrappedTarget - currentRot;
 
-    propulsionPID.setSetpoint(state.speedMetersPerSecond);
+    if (Math.abs(angleError) < 0.002) { // ~0.7 degrees
+        m_turningMotor.stopMotor();
+    } else {
+        m_turningMotor.setControl(
+            new PositionVoltage(unwrappedTarget)
+        );
+    }
+
+    // ---------------- DRIVE SPEED SCALING ----------------
+    double speedScale = Math.cos(angleError * 2.0 * Math.PI);
+    double driveSpeed = state.speedMetersPerSecond * speedScale;
+
+    // ---------------- DRIVE CONTROL ----------------
+    propulsionPID.setSetpoint(driveSpeed);
+
     m_propulsionMotor.setVoltage(
-        propulsionPID.calculate(getPropulsionVelocity())
-        + propulsionFF.calculate(state.speedMetersPerSecond)
+        propulsionPID.calculate(getPropulsionVelocity()) +
+        propulsionFF.calculate(driveSpeed)
     );
   }
 }

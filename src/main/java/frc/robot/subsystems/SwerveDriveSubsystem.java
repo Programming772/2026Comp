@@ -96,7 +96,7 @@ public class SwerveDriveSubsystem extends SubsystemBase {
       modules[3].getPosition()
     },
     new Pose2d(),
-    VecBuilder.fill(0.1, 0.1, 0.1),
+    VecBuilder.fill(0.05, 0.05, 0.02),
     VecBuilder.fill(1, 1, 1)
   );
 
@@ -190,7 +190,7 @@ public class SwerveDriveSubsystem extends SubsystemBase {
   
   public Rotation2d getRotation() {
     // returns the radian rotation of the gyro
-    return Rotation2d.fromDegrees(gyro.getYaw().getValueAsDouble());
+    return Rotation2d.fromDegrees(-gyro.getYaw().getValueAsDouble());
 
   }
 
