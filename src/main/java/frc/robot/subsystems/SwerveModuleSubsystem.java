@@ -11,22 +11,22 @@ import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
-
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.PIDController;
-import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
-import edu.wpi.first.math.trajectory.TrapezoidProfile;
-import edu.wpi.first.units.Units;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
 import frc.robot.Constants.SwerveConstants;
 
+/**
+ * Represents a full Swerve Module.
+ * @author Koltin Scane
+ */
 public class SwerveModuleSubsystem extends SubsystemBase {
   // objects and variables instantiation
   public TalonFX m_propulsionMotor, m_turningMotor;
@@ -35,10 +35,10 @@ public class SwerveModuleSubsystem extends SubsystemBase {
   public boolean m_encoderReversed;
   private double lastAngleRotations = 0.0;
 
-
+  // objects for open loop propulsion velocity control
   public PIDController propulsionPID = new PIDController(SwerveConstants.propulsionPIDkp, SwerveConstants.propulsionPIDki, SwerveConstants.propulsionPIDkd);
-
   public SimpleMotorFeedforward propulsionFF = new SimpleMotorFeedforward(SwerveConstants.propulsionFFks, SwerveConstants.propulsionFFkv, SwerveConstants.propulsionFFka);
+
 
   public SwerveModuleSubsystem(int propulsionMotorID, int turningMotorID, int encoderID, Angle encoderOffset,
       boolean encoderReversed, InvertedValue driveInverted, InvertedValue turningInverted) {
@@ -70,8 +70,6 @@ public class SwerveModuleSubsystem extends SubsystemBase {
     turningConfig.Slot0.kS = 0.15;
     turningConfig.ClosedLoopRamps.VoltageClosedLoopRampPeriod = 0.05;
     turningConfig.Feedback.RotorToSensorRatio = SwerveConstants.kSteerGearRatio;
-    
-
 
 
     // applies the configs to the motors
@@ -85,7 +83,7 @@ public class SwerveModuleSubsystem extends SubsystemBase {
     m_encoderOffset = encoderOffset;
     m_encoderReversed = encoderReversed;
     
-
+    // syncs the turn motor encoder to the CanCoder
     resetToAbsolute();
   }
 
@@ -95,6 +93,9 @@ public class SwerveModuleSubsystem extends SubsystemBase {
     SmartDashboard.putNumber("SwerveModule [" + m_encoder.getDeviceID() + "]", getCANCoder().getRotations());
   }
 
+  /**
+   * Resets the turning motor's encoder to the absolute position of the CanCoder.
+   */
   public void resetToAbsolute() {
     double absoluteRotations =
         (m_encoder.getAbsolutePosition().getValueAsDouble()
@@ -115,12 +116,10 @@ public class SwerveModuleSubsystem extends SubsystemBase {
         * (Constants.SwerveConstants.wheelRadiusMeters * 2 * Math.PI);
   }
 
-  public void stopMotors() {
-    // sets the motor speed to 0 to turn the off
-    m_propulsionMotor.set(0);
-    m_turningMotor.set(0);
-  }
-
+  /**
+   * 
+   * @return absolute angle of the module relative to the CanCoder.
+   */
   public Rotation2d getCANCoder() {
     // returns the position of the absolute encoder in radians
     return Rotation2d.fromRotations((m_encoder.getAbsolutePosition().getValueAsDouble()) * (m_encoderReversed ? -1 : 1));
@@ -132,11 +131,6 @@ public class SwerveModuleSubsystem extends SubsystemBase {
 
   public double getCanCoderVelocity() {
     return (m_encoder.getVelocity().getValueAsDouble()) * 2 * Math.PI;
-  }
-
-  public void resetEncoders() {
-    // sets encoders to 0
-    m_propulsionMotor.setPosition(0);
   }
 
   public SwerveModuleState getState() {

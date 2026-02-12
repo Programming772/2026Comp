@@ -27,7 +27,10 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
 
-
+/**
+ * Represents a full Swerve Drive.
+ * @author Koltin Scane
+ */
 public class SwerveDriveSubsystem extends SubsystemBase {
   private static final SwerveModuleSubsystem [] modules = {
     // makes a SwerveModuleSubsystem for the front left module
