@@ -15,7 +15,7 @@ import edu.wpi.first.units.measure.Angle;
 
 public final class Constants {
   // array of all connected cameras
-  public static final String[] cameraNames = {"ArduCam1", "ArduCam2"};
+  public static final String[] cameraNames = {"ArduCamFront"};
 
   public static final double leftPoleYaw = 0;
   public static final double rightPoleYaw = 0;
@@ -68,7 +68,7 @@ public final class Constants {
     }
 
     // propulsion PID coefficients
-    public static final double propulsionPIDkp = 0.0;
+    public static final double propulsionPIDkp = 5;
     public static final double propulsionPIDki = 0.0;
     public static final double propulsionPIDkd = 0.0;
 

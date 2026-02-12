@@ -4,10 +4,15 @@
 
 package frc.robot;
 
+import com.pathplanner.lib.auto.AutoBuilder;
+
 import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.PneumaticsModuleType;
 import edu.wpi.first.wpilibj.DoubleSolenoid.Value;
+import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
+import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
@@ -26,6 +31,7 @@ public class RobotContainer {
   final IntakeSubsystem intakeSubsystem = new IntakeSubsystem();
 
   final Joystick driverController = new Joystick(0);
+  SendableChooser<Command> autoChooser;
 
   Trigger climbToggle = new JoystickButton(driverController, 1);
 
@@ -37,10 +43,14 @@ public class RobotContainer {
     swerveSubsystem.setDefaultCommand(new TeleoperatedControlCommand(
       swerveSubsystem,
       () -> !driverController.getRawButton(7),
-      () -> driverController.getRawAxis(0),
-      () -> driverController.getRawAxis(1),
-      () -> -driverController.getRawAxis(4)
+      () -> -driverController.getRawAxis(1),
+      () -> -driverController.getRawAxis(0),
+      () -> driverController.getRawAxis(4)
     )); 
+
+    autoChooser = AutoBuilder.buildAutoChooser();
+
+    SmartDashboard.putData("Auto Chooser", autoChooser);
 
     configureBindings();
   }
@@ -51,6 +61,6 @@ public class RobotContainer {
   }
 
   public Command getAutonomousCommand() {
-    return Commands.print("No autonomous command configured");
+    return autoChooser.getSelected();
   }
 }

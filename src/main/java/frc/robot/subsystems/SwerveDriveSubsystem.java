@@ -190,7 +190,7 @@ public class SwerveDriveSubsystem extends SubsystemBase {
   
   public Rotation2d getRotation() {
     // returns the radian rotation of the gyro
-    return Rotation2d.fromDegrees(-gyro.getYaw().getValueAsDouble());
+    return Rotation2d.fromDegrees(gyro.getYaw().getValueAsDouble());
 
   }
 
