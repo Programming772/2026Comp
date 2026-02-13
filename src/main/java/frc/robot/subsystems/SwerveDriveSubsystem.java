@@ -181,14 +181,6 @@ public class SwerveDriveSubsystem extends SubsystemBase {
       modules[i].setState(states[i], omegaRadPerSec);
     }
   }
-
-  
-  
-  public void stopSwerveDrive() {
-    // stops all motors in the swerve drive
-    for (SwerveModuleSubsystem module : modules)
-      module.stopMotors();
-  }
   
   
   public Rotation2d getRotation() {

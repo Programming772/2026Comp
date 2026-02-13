@@ -20,14 +20,14 @@ import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.commands.TeleoperatedControlCommand;
 import frc.robot.subsystems.IntakeSubsystem;
-import frc.robot.subsystems.ShooterSubsystem;
+// import frc.robot.subsystems.ShooterSubsystem;
 import frc.robot.subsystems.SwerveDriveSubsystem;
 
 public class RobotContainer {
   final DoubleSolenoid climber = new DoubleSolenoid(PneumaticsModuleType.CTREPCM, 2, 4);
 
   final SwerveDriveSubsystem swerveSubsystem = new SwerveDriveSubsystem();
-  final ShooterSubsystem shooterSubsystem = new ShooterSubsystem();
+  // final ShooterSubsystem shooterSubsystem = new ShooterSubsystem();
   final IntakeSubsystem intakeSubsystem = new IntakeSubsystem();
 
   final Joystick driverController = new Joystick(0);

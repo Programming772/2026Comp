@@ -74,8 +74,6 @@ public class TeleoperatedControlCommand extends Command {
   // Called once the command ends or is interrupted.
   @Override
   public void end(boolean interrupted) {
-    // stops the swerve drive
-    swerveSubsystem.stopSwerveDrive();
   }
 
   // Returns true when the command should end.
