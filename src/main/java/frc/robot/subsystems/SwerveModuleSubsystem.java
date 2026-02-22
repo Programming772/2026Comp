@@ -89,6 +89,7 @@ public class SwerveModuleSubsystem extends SubsystemBase {
 
   @Override
   public void periodic() {
+    SmartDashboard.putBoolean("getName()", true);
     // This method will be called once per scheduler run
     SmartDashboard.putNumber("SwerveModule [" + m_encoder.getDeviceID() + "]", getCANCoder().getRotations());
   }
@@ -106,14 +107,12 @@ public class SwerveModuleSubsystem extends SubsystemBase {
 
   public double getPropulsionPosition() {
     // returns the position of the propulsion motor in meters
-    return ((m_propulsionMotor.getPosition().getValueAsDouble()) / Constants.SwerveConstants.kDriveGearRatio)
-        * (Constants.SwerveConstants.wheelRadiusMeters * 2 * Math.PI);
+    return ((m_propulsionMotor.getPosition().getValueAsDouble()) / Constants.SwerveConstants.kDriveGearRatio) * (Constants.SwerveConstants.wheelRadiusMeters * 2 * Math.PI);
   }
 
   public double getPropulsionVelocity() {
     // returns the velocity of the propulsion motor in meters per second
-    return ((m_propulsionMotor.getVelocity().getValueAsDouble()) / Constants.SwerveConstants.kDriveGearRatio)
-        * (Constants.SwerveConstants.wheelRadiusMeters * 2 * Math.PI);
+    return ((m_propulsionMotor.getVelocity().getValueAsDouble()) / Constants.SwerveConstants.kDriveGearRatio) * (Constants.SwerveConstants.wheelRadiusMeters * 2 * Math.PI);
   }
 
   /**
@@ -144,64 +143,40 @@ public class SwerveModuleSubsystem extends SubsystemBase {
   }
 
   public void setState(SwerveModuleState state, double omegaRadPerSec) {
-
-    // ---------------- STOP DETECTION ----------------
-    boolean stopped =
-        Math.abs(state.speedMetersPerSecond) < 0.05 &&
-        Math.abs(omegaRadPerSec) < 0.05;
+    boolean stopped = Math.abs(state.speedMetersPerSecond) < 0.05 && Math.abs(omegaRadPerSec) < 0.05;
 
     if (stopped) {
-        // Hold last angle ONLY when fully stopped
-        m_turningMotor.setControl(
-            new PositionVoltage(lastAngleRotations)
-        );
-        m_propulsionMotor.setVoltage(0);
-        return;
+      m_turningMotor.setControl(new PositionVoltage(lastAngleRotations));
+      m_propulsionMotor.setVoltage(0);
+      return;
     }
 
-    // ---------------- CURRENT / TARGET ----------------
     double currentRot = m_turningMotor.getPosition().getValueAsDouble();
     double targetRot  = state.angle.getRotations();
-
-    // Find shortest path (-0.5 to +0.5 rotations)
     double delta = targetRot - currentRot;
     delta = MathUtil.inputModulus(delta, -0.5, 0.5);
 
-    // ---------------- FLIP LOGIC (ONLY WHILE MOVING) ----------------
-    if (Math.abs(delta) > 0.25) { // > 90 degrees
-        delta -= Math.signum(delta) * 0.5;
-
-        state = new SwerveModuleState(
-            -state.speedMetersPerSecond,
-            state.angle.plus(Rotation2d.fromRotations(0.5))
-        );
+    if (Math.abs(delta) > 0.25) {
+      delta -= Math.signum(delta) * 0.5;
+      state = new SwerveModuleState(-state.speedMetersPerSecond, state.angle.plus(Rotation2d.fromRotations(0.5)));
     }
-
-    // ---------------- UNWRAP TARGET ----------------
+    
     double unwrappedTarget = currentRot + delta;
     lastAngleRotations = unwrappedTarget;
 
-    // ---------------- ANGLE DEADZONE ----------------
     double angleError = unwrappedTarget - currentRot;
 
-    if (Math.abs(angleError) < 0.002) { // ~0.7 degrees
-        m_turningMotor.stopMotor();
+    if (Math.abs(angleError) < 0.002) {
+      m_turningMotor.stopMotor();
     } else {
-        m_turningMotor.setControl(
-            new PositionVoltage(unwrappedTarget)
-        );
+      m_turningMotor.setControl(new PositionVoltage(unwrappedTarget));
     }
 
-    // ---------------- DRIVE SPEED SCALING ----------------
     double speedScale = Math.cos(angleError * 2.0 * Math.PI);
     double driveSpeed = state.speedMetersPerSecond * speedScale;
 
-    // ---------------- DRIVE CONTROL ----------------
     propulsionPID.setSetpoint(driveSpeed);
 
-    m_propulsionMotor.setVoltage(
-        propulsionPID.calculate(getPropulsionVelocity()) +
-        propulsionFF.calculate(driveSpeed)
-    );
+    m_propulsionMotor.setVoltage(propulsionPID.calculate(getPropulsionVelocity()) + propulsionFF.calculate(driveSpeed));
   }
 }

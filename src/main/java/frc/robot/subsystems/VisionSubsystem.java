@@ -13,8 +13,8 @@ import org.photonvision.EstimatedRobotPose;
 import org.photonvision.PhotonCamera;
 import org.photonvision.PhotonPoseEstimator;
 import org.photonvision.PhotonPoseEstimator.PoseStrategy;
-import org.photonvision.targeting.PhotonTrackedTarget;
 import org.photonvision.targeting.PhotonPipelineResult;
+import org.photonvision.targeting.PhotonTrackedTarget;
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.math.geometry.Rotation3d;
@@ -23,33 +23,26 @@ import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.subsystems.Camera;
 import frc.robot.Constants;
 
-
-public class VisionSubsystem extends SubsystemBase {
+public class VisionSubsystem extends SubsystemBase {  
   // objects instantiation for vision logic
-  public PhotonCamera[] cameras = {
-    new PhotonCamera(Constants.cameraNames[0])
-  };
-
-  public Transform3d[] cameraPositions = {
-    new Transform3d(new Translation3d(Units.inchesToMeters(14), Units.inchesToMeters(0), Units.inchesToMeters(9.2)), new Rotation3d(0, 0, 0)), // arduCam 1
-  };
-
-  public PhotonPoseEstimator[] poseEstimators = {
-    new PhotonPoseEstimator(AprilTagFieldLayout.loadField(AprilTagFields.kDefaultField), PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR, cameraPositions[0])
-  };
+  public Camera[] cameras = new Camera[Constants.cameraNames.length];
 
   private Map<String, List<PhotonPipelineResult>> results = new HashMap<String, List<PhotonPipelineResult>>();
   private Map<String, List<PhotonTrackedTarget>> aprilTags;
-
   
   public VisionSubsystem() {
+    for (int i = 0; i < cameras.length; i++) {
+      cameras[i] = new Camera(Constants.cameraNames[i], Constants.cameraPositions[i]);
+    } 
   }
 
 
   @Override
   public void periodic() {
+    SmartDashboard.putBoolean("getName()", true);
     Map<String, List<PhotonPipelineResult>> newResults = new HashMap<String, List<PhotonPipelineResult>>();
     
     // retrieves all new results for each camera on the robot

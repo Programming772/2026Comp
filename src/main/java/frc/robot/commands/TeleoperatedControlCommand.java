@@ -47,28 +47,12 @@ public class TeleoperatedControlCommand extends Command {
     ySpeed = Math.copySign(ySpeed * ySpeed, ySpeed);
     thetaSpeed = Math.copySign(thetaSpeed * thetaSpeed, thetaSpeed);
 
-
     // gets the speeds from the joystick inputs
     xSpeed *= Constants.SwerveConstants.maxVelocity;
     ySpeed *= Constants.SwerveConstants.maxVelocity;
     thetaSpeed *= Constants.SwerveConstants.maxAngularVelocity;
 
-    ChassisSpeeds chassisSpeeds;
-
-    // creates speeds relative to the wanted robot orientation
-    if (fieldOrientedSupplier.getAsBoolean()) {
-      chassisSpeeds = ChassisSpeeds.fromFieldRelativeSpeeds(xSpeed, ySpeed, thetaSpeed, swerveSubsystem.getRotation());
-    } else {
-      chassisSpeeds = new ChassisSpeeds(xSpeed, ySpeed, thetaSpeed);
-    }
-
-    ChassisSpeeds discretizedSpeeds = ChassisSpeeds.discretize(chassisSpeeds, 0.02);
-
-    // turns the chassis speeds into modules using the kinematics of the swerve drive
-    SwerveModuleState[] moduleStates = Constants.SwerveConstants.driveKinematics.toSwerveModuleStates(discretizedSpeeds);
-    
-    // applies the swerve module states to the swerve drive
-    swerveSubsystem.setModuleStates(moduleStates, discretizedSpeeds.omegaRadiansPerSecond);
+    swerveSubsystem.generateSpeeds(xSpeed, ySpeed, thetaSpeed);
   }
 
   // Called once the command ends or is interrupted.

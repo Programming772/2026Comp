@@ -6,7 +6,10 @@ package frc.robot;
 
 import static edu.wpi.first.units.Units.Rotations;
 
+import edu.wpi.first.math.geometry.Rotation3d;
+import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.trajectory.TrajectoryConfig;
 import edu.wpi.first.math.util.Units;
@@ -15,7 +18,12 @@ import edu.wpi.first.units.measure.Angle;
 
 public final class Constants {
   // array of all connected cameras
-  public static final String[] cameraNames = {"ArduCamFront"};
+  public static final String[] cameraNames = {"Front"};
+
+  public static final Transform3d[] cameraPositions = {
+    new Transform3d(new Translation3d(Units.inchesToMeters(12.5), Units.inchesToMeters(8), Units.inchesToMeters(9.2)), new Rotation3d(0, 0, 0)), // arduCam 1
+    new Transform3d(new Translation3d(Units.inchesToMeters(-13.5), Units.inchesToMeters(-8), Units.inchesToMeters(9.2)), new Rotation3d(180, 0, 0)) // arduCam 2
+  };
 
   public static final double leftPoleYaw = 0;
   public static final double rightPoleYaw = 0;

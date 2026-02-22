@@ -11,7 +11,10 @@ import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.config.PIDConstants;
 import com.pathplanner.lib.config.RobotConfig;
 import com.pathplanner.lib.controllers.PPHolonomicDriveController;
+
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.VecBuilder;
+import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -85,8 +88,10 @@ public class SwerveDriveSubsystem extends SubsystemBase {
 
   // timer for getting samples of paths
   public Timer pathTimer = new Timer();
-
+  private final PIDController thetaPID = new PIDController(2.5, 0.1, 0.03);
   private boolean slowDown = false;
+  private Rotation2d targetRot = getRotation();
+  private boolean isHeadingLocked = true;
   
   // creates a pose estimator object to get the position of the robot relative to the field
   public final SwerveDrivePoseEstimator poseEstimator = new SwerveDrivePoseEstimator(
@@ -102,7 +107,6 @@ public class SwerveDriveSubsystem extends SubsystemBase {
     VecBuilder.fill(0.05, 0.05, 0.02),
     VecBuilder.fill(1, 1, 1)
   );
-
 
   public SwerveDriveSubsystem() {
     SmartDashboard.putData("Field", field);
@@ -143,8 +147,9 @@ public class SwerveDriveSubsystem extends SubsystemBase {
       }, 
       this
     );
+
+    thetaPID.enableContinuousInput(-Math.PI, Math.PI);
   }
-  
   
   @Override
   public void periodic() {
@@ -165,36 +170,16 @@ public class SwerveDriveSubsystem extends SubsystemBase {
     SmartDashboard.putNumber("Rotation", poseEstimator.getEstimatedPosition().getRotation().getDegrees());
   }
   
-  
-  public void setModuleStates(SwerveModuleState[] states, double omegaRadPerSec) {
-    if (slowDown) {
-      SwerveDriveKinematics.desaturateWheelSpeeds(
-        states, (Constants.SwerveConstants.maxVelocity * 0.3)
-      );
-    } else {
-      SwerveDriveKinematics.desaturateWheelSpeeds(
-        states, Constants.SwerveConstants.maxVelocity
-      );
-    }
-
-    for (int i = 0; i < 4; i++) {
-      modules[i].setState(states[i], omegaRadPerSec);
-    }
-  }
-  
-  
   public Rotation2d getRotation() {
     // returns the radian rotation of the gyro
     return Rotation2d.fromDegrees(gyro.getYaw().getValueAsDouble());
 
   }
 
-
   public void resetHeading() {
     // resets the rotation of the gyro to 0
     gyro.reset();
   }
-
 
   public void updateOdometryRobotRelative() {
     // updates the odometry relative to the onboard sensors
@@ -209,11 +194,18 @@ public class SwerveDriveSubsystem extends SubsystemBase {
     );
   }
 
-
-  public void autoPose(Pose2d newHeading) {
-    poseEstimator.resetPose(newHeading);
+  public void autoPose(Pose2d newPose) {
+    poseEstimator.resetPosition(
+      getRotation(),  // current gyro rotation
+      new SwerveModulePosition[] {
+        modules[0].getPosition(),
+        modules[1].getPosition(),
+        modules[2].getPosition(),
+        modules[3].getPosition()
+      },
+      newPose
+    );
   }
-
 
   public void updateOdometry(EstimatedRobotPose pose) {
     // updates odometry relative to the returned position form Photon vision
@@ -221,17 +213,14 @@ public class SwerveDriveSubsystem extends SubsystemBase {
     poseEstimator.resetRotation(getRotation());    
   }
 
-
   public Pose2d getPose() {
     // returns the pose that is provided by the odometry
     return poseEstimator.getEstimatedPosition();
   }
   
-
   public ChassisSpeeds getRobotSpeeds() {
     return Constants.SwerveConstants.driveKinematics.toChassisSpeeds(getModuleStates());
   }
-
 
   public SwerveModuleState[] getModuleStates() {
     return new SwerveModuleState[] {
@@ -242,6 +231,28 @@ public class SwerveDriveSubsystem extends SubsystemBase {
     };
   }
 
+  public void generateSpeeds(double xSpeed, double ySpeed, double thetaSpeed) {
+    if (Math.abs(thetaSpeed) < 0.05) {
+      if (!isHeadingLocked) {
+        targetRot = getRotation();
+        thetaPID.reset();
+        isHeadingLocked = true;
+      }
+
+      thetaSpeed = -thetaPID.calculate(getRotation().getRadians(), targetRot.getRadians());
+    } else {
+      isHeadingLocked = false;
+      targetRot = getRotation();
+    }
+
+    thetaSpeed = MathUtil.clamp(thetaSpeed, -4.0, 4.0);
+    
+    ChassisSpeeds chassisSpeeds = ChassisSpeeds.fromFieldRelativeSpeeds(xSpeed, ySpeed, thetaSpeed, getRotation());
+
+    ChassisSpeeds discretizedSpeeds = ChassisSpeeds.discretize(chassisSpeeds, 0.02);
+    
+    setSpeeds(discretizedSpeeds);
+  }
 
   public void setSpeeds(ChassisSpeeds speeds) {
     SwerveModuleState[] states =
@@ -259,10 +270,7 @@ public class SwerveDriveSubsystem extends SubsystemBase {
     }
 
     for (int i = 0; i < 4; i++) {
-      modules[i].setState(
-        states[i],
-        speeds.omegaRadiansPerSecond
-      );
+      modules[i].setState(states[i], speeds.omegaRadiansPerSecond);
     }
   }
 
@@ -272,5 +280,15 @@ public class SwerveDriveSubsystem extends SubsystemBase {
 
   public void regularSpeed() {
     slowDown = false;
+  }
+
+  public void setTargetRot(Rotation2d angle) {
+    targetRot = angle;
+  }
+
+  public void humpRot() {
+    double currentAngle = getRotation().getDegrees();
+
+    targetRot = Rotation2d.fromDegrees(45 + 90 * Math.floor(currentAngle / 90));
   }
 }

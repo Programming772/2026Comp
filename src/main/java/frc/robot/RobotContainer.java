@@ -6,6 +6,8 @@ package frc.robot;
 
 import com.pathplanner.lib.auto.AutoBuilder;
 
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.vision.VisionRunner;
 import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.PneumaticsModuleType;
@@ -22,6 +24,7 @@ import frc.robot.commands.TeleoperatedControlCommand;
 import frc.robot.subsystems.IntakeSubsystem;
 // import frc.robot.subsystems.ShooterSubsystem;
 import frc.robot.subsystems.SwerveDriveSubsystem;
+import frc.robot.subsystems.VisionSubsystem;
 
 public class RobotContainer {
   final DoubleSolenoid climber = new DoubleSolenoid(PneumaticsModuleType.CTREPCM, 2, 4);
@@ -29,13 +32,14 @@ public class RobotContainer {
   final SwerveDriveSubsystem swerveSubsystem = new SwerveDriveSubsystem();
   // final ShooterSubsystem shooterSubsystem = new ShooterSubsystem();
   final IntakeSubsystem intakeSubsystem = new IntakeSubsystem();
+  final VisionSubsystem visionSubsystem = new VisionSubsystem();
 
   final Joystick driverController = new Joystick(0);
   SendableChooser<Command> autoChooser;
 
   Trigger climbToggle = new JoystickButton(driverController, 1);
-
   Trigger slow = new JoystickButton(driverController, 6);
+  Trigger hold45 = new JoystickButton(driverController, 2);
 
   public RobotContainer() {
     climber.set(Value.kForward);
@@ -58,6 +62,7 @@ public class RobotContainer {
   private void configureBindings() {
     climbToggle.onTrue(new InstantCommand(() -> climber.toggle()));
     slow.whileTrue(new InstantCommand(() -> swerveSubsystem.slowSpeed())).onFalse(new InstantCommand(() -> swerveSubsystem.regularSpeed()));
+    hold45.onTrue(new InstantCommand(() -> swerveSubsystem.humpRot()));
   }
 
   public Command getAutonomousCommand() {
