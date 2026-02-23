@@ -116,32 +116,41 @@ public class SwerveModuleSubsystem extends SubsystemBase {
   }
 
   /**
-   * 
-   * @return absolute angle of the module relative to the CanCoder.
+   * @return Absolute angle of the module relative to the CanCoder.
    */
   public Rotation2d getCANCoder() {
     // returns the position of the absolute encoder in radians
     return Rotation2d.fromRotations((m_encoder.getAbsolutePosition().getValueAsDouble()) * (m_encoderReversed ? -1 : 1));
   }
 
+  /**
+   * @return Positon of the turn motor.
+   */
   public Rotation2d getTurnPosition() {
     return Rotation2d.fromRotations((m_turningMotor.getPosition().getValueAsDouble()));
   }
 
-  public double getCanCoderVelocity() {
-    return (m_encoder.getVelocity().getValueAsDouble()) * 2 * Math.PI;
-  }
-
+  /**
+   * Gets a module state (speed and rotation).
+   * @return Current swerve module state.
+   */
   public SwerveModuleState getState() {
-    // returns the current state of the module (speed and rotation)
     return new SwerveModuleState(getPropulsionVelocity(), getCANCoder());
   }
 
+  /**
+   * Gets a module position (distance traveled and rotation).
+   * @return Current swerve module position.
+   */
   public SwerveModulePosition getPosition() {
-    // returns the current position of the module (distance traveled and rotation)
     return new SwerveModulePosition(getPropulsionPosition(), getCANCoder());
   }
 
+  /**
+   * 
+   * @param state The desired state of the swerve module.
+   * @param omegaRadPerSec 
+   */
   public void setState(SwerveModuleState state, double omegaRadPerSec) {
     boolean stopped = Math.abs(state.speedMetersPerSecond) < 0.05 && Math.abs(omegaRadPerSec) < 0.05;
 

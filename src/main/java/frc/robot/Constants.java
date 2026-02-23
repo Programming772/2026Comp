@@ -43,6 +43,8 @@ public final class Constants {
     public static final double kDriveGearRatio = 5.9;
     public static final double kSteerGearRatio = 12.8;
 
+    public static final int pigeonID = 13;
+
     // constants for front left module
     public static final class FrontLeftConstants {
       public static final int frontLeftPropulsionID = 1;
@@ -94,6 +96,10 @@ public final class Constants {
     public static final double turningFFka = 0.0;
     public static final double turningFFks = 0.0;
     public static final double turningFFkv = 0.0;
+
+    public static final double thetaPIDkp = 2.5;
+    public static final double thetaPIDki = 0.1;
+    public static final double thetaPIDkd = 0.03;
 
     // distance between modules
     public static final double kTrackWidth = Units.inchesToMeters(23);

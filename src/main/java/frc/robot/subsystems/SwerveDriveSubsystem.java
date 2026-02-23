@@ -31,6 +31,7 @@ import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
+import frc.robot.Constants.SwerveConstants;
 
 /**
  * Represents a full Swerve Drive.
@@ -81,18 +82,12 @@ public class SwerveDriveSubsystem extends SubsystemBase {
   };
 
   private final VisionSubsystem visionSubsystem = new VisionSubsystem();
-
+  public final Pigeon2 gyro = new Pigeon2(SwerveConstants.pigeonID);
+  private final PIDController thetaPID = new PIDController(SwerveConstants.thetaPIDkp, SwerveConstants.thetaPIDki, SwerveConstants.thetaPIDkd);
   private RobotConfig config;
-  
-  // makes pigeon - note to do the calibration
-  public final Pigeon2 gyro = new Pigeon2(13);
-  public static Field2d field = new Field2d();
-
-  // timer for getting samples of paths
-  public Timer pathTimer = new Timer();
-  private final PIDController thetaPID = new PIDController(2.5, 0.1, 0.03);
-  private boolean slowDown = false;
+  private Field2d field = new Field2d();
   private Rotation2d targetRot = getRotation();
+  private boolean slowDown = false;
   private boolean isHeadingLocked = true;
   
   // creates a pose estimator object to get the position of the robot relative to the field
@@ -112,8 +107,6 @@ public class SwerveDriveSubsystem extends SubsystemBase {
 
   public SwerveDriveSubsystem() {
     SmartDashboard.putData("Field", field);
-    // improves CAN%
-    gyro.optimizeBusUtilization(100, 10);
 
     try {
       config = RobotConfig.fromGUISettings();
@@ -150,13 +143,14 @@ public class SwerveDriveSubsystem extends SubsystemBase {
       this
     );
 
+    gyro.optimizeBusUtilization(100, 10);
     thetaPID.enableContinuousInput(-Math.PI, Math.PI);
   }
   
   @Override
   public void periodic() {
+    // pose estimation relative to robot sensors and vision
     updateOdometryRobotRelative();
-    
     Optional<EstimatedRobotPose> visionPose = visionSubsystem.getEstimatedPose();
 
     if (visionPose.isPresent()) {
@@ -177,10 +171,12 @@ public class SwerveDriveSubsystem extends SubsystemBase {
     SmartDashboard.putNumber("Rotation", poseEstimator.getEstimatedPosition().getRotation().getDegrees());
   }
   
+  /**
+   * @return Rotation of the gyro.
+   */
   public Rotation2d getRotation() {
-    // returns the radian rotation of the gyro
+    // returns 
     return Rotation2d.fromDegrees(gyro.getYaw().getValueAsDouble());
-
   }
 
   public void resetHeading() {
