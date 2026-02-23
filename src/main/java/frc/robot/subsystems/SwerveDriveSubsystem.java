@@ -4,6 +4,8 @@
 
 package frc.robot.subsystems;
 
+import java.util.Optional;
+
 import org.photonvision.EstimatedRobotPose;
 import com.ctre.phoenix6.hardware.Pigeon2;
 import com.ctre.phoenix6.signals.InvertedValue;
@@ -78,7 +80,7 @@ public class SwerveDriveSubsystem extends SubsystemBase {
     )
   };
 
-  //private final VisionSubsystem visionSubsystem = new VisionSubsystem();
+  private final VisionSubsystem visionSubsystem = new VisionSubsystem();
 
   private RobotConfig config;
   
@@ -104,8 +106,8 @@ public class SwerveDriveSubsystem extends SubsystemBase {
       modules[3].getPosition()
     },
     new Pose2d(),
-    VecBuilder.fill(0.05, 0.05, 0.02),
-    VecBuilder.fill(1, 1, 1)
+    VecBuilder.fill(0.05, 0.05, Units.degreesToRadians(5)),
+    VecBuilder.fill(0.7, 0.7, Units.degreesToRadians(10))
   );
 
   public SwerveDriveSubsystem() {
@@ -153,13 +155,18 @@ public class SwerveDriveSubsystem extends SubsystemBase {
   
   @Override
   public void periodic() {
-    // updates the odometry to the value returned by Photon vision
-    // Optional<EstimatedRobotPose> estimate = visionSubsystem.getEstimatedPose();
-    // estimate.ifPresent(this::updateOdometry);
+    updateOdometryRobotRelative();
+    
+    Optional<EstimatedRobotPose> visionPose = visionSubsystem.getEstimatedPose();
 
-    // if there are no april tags in view, using onboard sensors to estimate position
-    // if (estimate.isEmpty())
-      updateOdometryRobotRelative();
+    if (visionPose.isPresent()) {
+      EstimatedRobotPose estimate = visionPose.get();
+
+      // Only trust multi-tag
+      if (estimate.targetsUsed.size() >= 2) {
+        poseEstimator.addVisionMeasurement(estimate.estimatedPose.toPose2d(), estimate.timestampSeconds);
+      }
+    }
     
     // updates the minifield on Shuffle board to the estimated position of the bot
     field.setRobotPose(poseEstimator.getEstimatedPosition());

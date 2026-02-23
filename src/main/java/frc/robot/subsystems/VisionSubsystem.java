@@ -10,20 +10,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.photonvision.EstimatedRobotPose;
-import org.photonvision.PhotonCamera;
-import org.photonvision.PhotonPoseEstimator;
-import org.photonvision.PhotonPoseEstimator.PoseStrategy;
 import org.photonvision.targeting.PhotonPipelineResult;
 import org.photonvision.targeting.PhotonTrackedTarget;
-import edu.wpi.first.apriltag.AprilTagFieldLayout;
-import edu.wpi.first.apriltag.AprilTagFields;
-import edu.wpi.first.math.geometry.Rotation3d;
-import edu.wpi.first.math.geometry.Transform3d;
-import edu.wpi.first.math.geometry.Translation3d;
-import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import frc.robot.subsystems.Camera;
 import frc.robot.Constants;
 
 public class VisionSubsystem extends SubsystemBase {  
@@ -39,67 +29,61 @@ public class VisionSubsystem extends SubsystemBase {
     } 
   }
 
-
   @Override
   public void periodic() {
-    SmartDashboard.putBoolean("getName()", true);
     Map<String, List<PhotonPipelineResult>> newResults = new HashMap<String, List<PhotonPipelineResult>>();
     
     // retrieves all new results for each camera on the robot
-    for (PhotonCamera camera : cameras) {
-      newResults.put(camera.getName(), camera.getAllUnreadResults());
-
-      if (! (newResults.isEmpty())) {
-        results = newResults;
-      }
+    for (Camera camera : cameras) {
+      newResults.put(camera.getName(), camera.getResults());
     }
 
-    if (aprilTags != null) {
-      for (int i = 0; i < aprilTags.size(); i++) {
-        double[] tagIDs = new double[aprilTags.get(Constants.cameraNames[i]).size()];
+    if (!(newResults.isEmpty())) {
+      results = newResults;
+    }
 
-        // gets the ID of each seen April tag
-        for (int k = 0; k < tagIDs.length; k++) {
-          tagIDs[k] = aprilTags.get(Constants.cameraNames[i]).get(k).getFiducialId();
-        }
+    for (int i = 0; i < aprilTags.size(); i++) {
+      double[] tagIDs = new double[aprilTags.get(Constants.cameraNames[i]).size()];
 
-        // displays the seen april tags on Shuffleboard
-        SmartDashboard.putString("April Tags", Arrays.toString(tagIDs));
+      // gets the ID of each seen April tag
+      for (int k = 0; k < tagIDs.length; k++) {
+        tagIDs[k] = aprilTags.get(Constants.cameraNames[i]).get(k).getFiducialId();
       }
+
+      // displays the seen april tags on Shuffleboard
+      SmartDashboard.putString("April Tags", Arrays.toString(tagIDs));
     }
   }
 
-  
   public Map<String, List<PhotonTrackedTarget>> getAprilTags() {
-    aprilTags = new HashMap<String, List<PhotonTrackedTarget>>();
+    Map<String, List<PhotonTrackedTarget>> aprilTags = new HashMap<>();
 
-    // gets each seen april tag from the results
-    if (results.size() != 0) {
-      for (int i = 0; i < results.size(); i++) {
-        for (PhotonPipelineResult result : results.get(Constants.cameraNames[i])) {
-          List<PhotonTrackedTarget> newtargets = result.getTargets();
-          
-          aprilTags.put(Constants.cameraNames[i], newtargets);
-        }
+    for (Camera camera : cameras) {
+      List<PhotonPipelineResult> cameraResults = results.get(camera.getName());
+      if (cameraResults == null) continue;
+
+      for (PhotonPipelineResult result : cameraResults) {
+        aprilTags.put(camera.getName(), result.getTargets());
       }
     }
 
-    // returns an array of seen april tags
     return aprilTags;
   }
 
-
   public Optional<EstimatedRobotPose> getEstimatedPose() {
-    Optional<EstimatedRobotPose> estimatedRobot = Optional.empty();
+    for (Camera camera : cameras) {
+    List<PhotonPipelineResult> cameraResults = results.get(camera.getName());
+    if (cameraResults == null) continue;
 
-    for (int i = 0; i < results.size(); i++) {
-      // updates the estimated relative to the multi tag result
-      for (PhotonPipelineResult multiTag : results.get(Constants.cameraNames[i])) {
-        estimatedRobot = poseEstimators[0].update(multiTag);
+    for (PhotonPipelineResult multiTag : cameraResults) {
+      Optional<EstimatedRobotPose> pose = camera.getPoseEstimator().update(multiTag);
+      
+      if (pose.isPresent()) {
+        return pose; // return first valid pose
       }
     }
+  }
 
-    // returns the estimated robot position
-    return estimatedRobot;
+  return Optional.empty();
   }
 }

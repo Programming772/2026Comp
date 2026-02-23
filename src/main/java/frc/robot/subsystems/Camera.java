@@ -4,9 +4,12 @@
 
 package frc.robot.subsystems;
 
+import java.util.List;
+
 import org.photonvision.PhotonCamera;
 import org.photonvision.PhotonPoseEstimator;
 import org.photonvision.PhotonPoseEstimator.PoseStrategy;
+import org.photonvision.targeting.PhotonPipelineResult;
 
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
@@ -26,7 +29,15 @@ public class Camera {
     return camera;
   }
 
+  public String getName() {
+    return camera.getName();
+  }
+
   public PhotonPoseEstimator getPoseEstimator() {
     return poseEstimator;
+  }
+
+  public List<PhotonPipelineResult> getResults() {
+    return camera.getAllUnreadResults();
   }
 }
