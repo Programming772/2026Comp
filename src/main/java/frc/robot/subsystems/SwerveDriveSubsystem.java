@@ -13,6 +13,7 @@ import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.config.PIDConstants;
 import com.pathplanner.lib.config.RobotConfig;
 import com.pathplanner.lib.controllers.PPHolonomicDriveController;
+import com.pathplanner.lib.util.DriveFeedforwards;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.VecBuilder;
@@ -81,10 +82,9 @@ public class SwerveDriveSubsystem extends SubsystemBase {
     )
   };
 
-  private final VisionSubsystem visionSubsystem = new VisionSubsystem();
+  // private final VisionSubsystem visionSubsystem = new VisionSubsystem();
   public final Pigeon2 gyro = new Pigeon2(SwerveConstants.pigeonID);
   private final PIDController thetaPID = new PIDController(SwerveConstants.thetaPIDkp, SwerveConstants.thetaPIDki, SwerveConstants.thetaPIDkd);
-  private RobotConfig config;
   private Field2d field = new Field2d();
   private Rotation2d targetRot = getRotation();
   private boolean slowDown = false;
@@ -108,41 +108,6 @@ public class SwerveDriveSubsystem extends SubsystemBase {
   public SwerveDriveSubsystem() {
     SmartDashboard.putData("Field", field);
 
-    try {
-      config = RobotConfig.fromGUISettings();
-    } catch (Exception e) {
-      System.out.println(e);
-    }
-
-    // instantiates the PathPlanner AutoBuilder 
-    AutoBuilder.configure(
-      this::getPose, 
-      this::autoPose, 
-      this::getRobotSpeeds, 
-      this::setSpeeds, 
-      new PPHolonomicDriveController(
-        new PIDConstants(
-          Constants.SwerveConstants.propulsionPIDkp, 
-          Constants.SwerveConstants.propulsionPIDki, 
-          Constants.SwerveConstants.propulsionPIDkd), 
-        new PIDConstants(
-          Constants.SwerveConstants.turningPIDkp, 
-          Constants.SwerveConstants.turningPIDki, 
-          Constants.SwerveConstants.turningPIDkd)
-      ), 
-      config, 
-      () -> {
-        var alliance = DriverStation.getAlliance();
-
-        if (alliance.isPresent()) {
-          return alliance.get() == DriverStation.Alliance.Red;
-        }
-
-        return false;
-      }, 
-      this
-    );
-
     gyro.optimizeBusUtilization(100, 10);
     thetaPID.enableContinuousInput(-Math.PI, Math.PI);
   }
@@ -151,16 +116,16 @@ public class SwerveDriveSubsystem extends SubsystemBase {
   public void periodic() {
     // pose estimation relative to robot sensors and vision
     updateOdometryRobotRelative();
-    Optional<EstimatedRobotPose> visionPose = visionSubsystem.getEstimatedPose();
+    // Optional<EstimatedRobotPose> visionPose = visionSubsystem.getEstimatedPose();
 
-    if (visionPose.isPresent()) {
-      EstimatedRobotPose estimate = visionPose.get();
+    // if (visionPose.isPresent()) {
+    //   EstimatedRobotPose estimate = visionPose.get();
 
-      // Only trust multi-tag
-      if (estimate.targetsUsed.size() >= 2) {
-        poseEstimator.addVisionMeasurement(estimate.estimatedPose.toPose2d(), estimate.timestampSeconds);
-      }
-    }
+    //   // Only trust multi-tag
+    //   if (estimate.targetsUsed.size() >= 2) {
+    //     poseEstimator.addVisionMeasurement(estimate.estimatedPose.toPose2d(), estimate.timestampSeconds);
+    //   }
+    // }
     
     // updates the minifield on Shuffle board to the estimated position of the bot
     field.setRobotPose(poseEstimator.getEstimatedPosition());
@@ -179,13 +144,17 @@ public class SwerveDriveSubsystem extends SubsystemBase {
     return Rotation2d.fromDegrees(gyro.getYaw().getValueAsDouble());
   }
 
+  /**
+   * Sets the yaw of the gyro to 0.
+   */
   public void resetHeading() {
-    // resets the rotation of the gyro to 0
     gyro.reset();
   }
 
+  /**
+   * Updates the swerve drive odometry relative to the onboard sensors.
+   */
   public void updateOdometryRobotRelative() {
-    // updates the odometry relative to the onboard sensors
     poseEstimator.update(
       getRotation(),
       new SwerveModulePosition[] {
@@ -197,9 +166,13 @@ public class SwerveDriveSubsystem extends SubsystemBase {
     );
   }
 
+  /**
+   * Sets the position of swerve drive pose estimator to the supplied pose.
+   * @param newPose The new pose of the swerve drive on the field.
+   */
   public void autoPose(Pose2d newPose) {
     poseEstimator.resetPosition(
-      getRotation(),  // current gyro rotation
+      getRotation(),
       new SwerveModulePosition[] {
         modules[0].getPosition(),
         modules[1].getPosition(),
@@ -210,21 +183,26 @@ public class SwerveDriveSubsystem extends SubsystemBase {
     );
   }
 
-  public void updateOdometry(EstimatedRobotPose pose) {
-    // updates odometry relative to the returned position form Photon vision
-    poseEstimator.resetPose(pose.estimatedPose.toPose2d());
-    poseEstimator.resetRotation(getRotation());    
-  }
-
+  /**
+   * Gets the pose provided by the swerve drive pose estimator.
+   * @return The estimated pose.
+   */
   public Pose2d getPose() {
-    // returns the pose that is provided by the odometry
     return poseEstimator.getEstimatedPosition();
   }
   
+  /**
+   * Gets the swerve drive's speed.
+   * @return The chassis speeds.
+   */
   public ChassisSpeeds getRobotSpeeds() {
     return Constants.SwerveConstants.driveKinematics.toChassisSpeeds(getModuleStates());
   }
 
+  /**
+   * Gets the states of all four swerve drive modules.
+   * @return The array of module states.
+   */
   public SwerveModuleState[] getModuleStates() {
     return new SwerveModuleState[] {
       modules[0].getState(),
@@ -234,6 +212,12 @@ public class SwerveDriveSubsystem extends SubsystemBase {
     };
   }
 
+  /**
+   * Generates chassis speeds relative to the inputted speeds and applies them to the swerve drive.
+   * @param xSpeed The x speed component of the chassis speeds.
+   * @param ySpeed The y speed component of the chassis speeds.
+   * @param thetaSpeed The rotation speed component of the chassis speeds.
+   */
   public void generateSpeeds(double xSpeed, double ySpeed, double thetaSpeed) {
     if (Math.abs(thetaSpeed) < 0.05) {
       if (!isHeadingLocked) {
@@ -248,15 +232,18 @@ public class SwerveDriveSubsystem extends SubsystemBase {
       targetRot = getRotation();
     }
 
-    thetaSpeed = MathUtil.clamp(thetaSpeed, -4.0, 4.0);
+    thetaSpeed = MathUtil.clamp(thetaSpeed, -1.5, 1.5);
     
     ChassisSpeeds chassisSpeeds = ChassisSpeeds.fromFieldRelativeSpeeds(xSpeed, ySpeed, thetaSpeed, getRotation());
-
     ChassisSpeeds discretizedSpeeds = ChassisSpeeds.discretize(chassisSpeeds, 0.02);
     
     setSpeeds(discretizedSpeeds);
   }
 
+  /**
+   * 
+   * @param speeds
+   */
   public void setSpeeds(ChassisSpeeds speeds) {
     SwerveModuleState[] states =
       Constants.SwerveConstants.driveKinematics

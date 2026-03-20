@@ -64,13 +64,12 @@ public class SwerveModuleSubsystem extends SubsystemBase {
     turningConfig.Voltage.PeakReverseVoltage = -12.0;
     turningConfig.Feedback.FeedbackRemoteSensorID = encoderID;
     turningConfig.Feedback.FeedbackSensorSource = FeedbackSensorSourceValue.FusedCANcoder;
-    turningConfig.Slot0.kP = 30.0;
+    turningConfig.Slot0.kP = 60;
     turningConfig.Slot0.kI = 0.0;
     turningConfig.Slot0.kD = 0.5;
-    turningConfig.Slot0.kS = 0.15;
+    turningConfig.Slot0.kS = 0.35;
     turningConfig.ClosedLoopRamps.VoltageClosedLoopRampPeriod = 0.05;
     turningConfig.Feedback.RotorToSensorRatio = SwerveConstants.kSteerGearRatio;
-
 
     // applies the configs to the motors
     m_propulsionMotor.getConfigurator().apply(new TalonFXConfiguration());

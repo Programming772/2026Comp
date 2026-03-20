@@ -25,15 +25,12 @@ public final class Constants {
     new Transform3d(new Translation3d(Units.inchesToMeters(-13.5), Units.inchesToMeters(-8), Units.inchesToMeters(9.2)), new Rotation3d(180, 0, 0)) // arduCam 2
   };
 
-  public static final double leftPoleYaw = 0;
-  public static final double rightPoleYaw = 0;
-
   // object for trajectory generation configs
   public static final TrajectoryConfig pathConfig = new TrajectoryConfig(3, 1);
 
 
   public final class SwerveConstants {
-    public static final double maxVelocity = 4;
+    public static final double maxVelocity = 5.2;
     public static final double maxAcceleration = 1;
     public static final double maxAngularVelocity = 2 * Math.PI;
     public static final double maxAngularAcceleration = 4 * Math.PI;
@@ -78,32 +75,31 @@ public final class Constants {
     }
 
     // propulsion PID coefficients
-    public static final double propulsionPIDkp = 2.5;
+    public static final double propulsionPIDkp = 1.0;
     public static final double propulsionPIDki = 0.0;
-    public static final double propulsionPIDkd = 0.0;
+    public static final double propulsionPIDkd = 0.01;
 
     // propulsion FF coefficients
     public static final double propulsionFFka = 0.0;
-    public static final double propulsionFFks = 0.25;
-    public static final double propulsionFFkv = 8;
+    public static final double propulsionFFks = 0.2625;
+    public static final double propulsionFFkv = 2.5;
 
     // turning PID coefficients
-    public static final double turningPIDkp = 3;
+    public static final double turningPIDkp = 0;
     public static final double turningPIDki = 0.0;
-    public static final double turningPIDkd = 0;
-    
-    // turning FF coefficients
-    public static final double turningFFka = 0.0;
-    public static final double turningFFks = 0.0;
-    public static final double turningFFkv = 0.0;
+    public static final double turningPIDkd = 0.0;
+    public static final double translationPIDkp = 10.0;
+    public static final double translationPIDki = 0.0;
+    public static final double translationPIDkd = 0.0;
 
-    public static final double thetaPIDkp = 2.5;
-    public static final double thetaPIDki = 0.1;
-    public static final double thetaPIDkd = 0.03;
+    // theta PID coefficients
+    public static final double thetaPIDkp = 3.0;
+    public static final double thetaPIDki = 0.0;
+    public static final double thetaPIDkd = 0.0;
 
     // distance between modules
-    public static final double kTrackWidth = Units.inchesToMeters(23);
-    public static final double kWheelBase  = Units.inchesToMeters(23);
+    public static final double kTrackWidth = Units.inchesToMeters(22);
+    public static final double kWheelBase  = Units.inchesToMeters(22);
 
     // creates a SwerveDriveKinematics object using the locations of the modules relative to centre of the robot
     public static final SwerveDriveKinematics driveKinematics = new SwerveDriveKinematics (
@@ -116,26 +112,10 @@ public final class Constants {
 
 
   public final class ShooterConstants {
-    // topFlyWheel, bottomFlyWheel, hood, turret IDs
-    public static final int topFlyWheelID = 0;
-    public static final int bottomFlyWheelID = 0;
+    // flywheel, hood, turret, tower IDs
+    public static final int flywheelID = 0;
     public static final int hoodID = 0;
     public static final int turretID = 0;
-
-    public static final double hoodPIDkp = 0.0;
-    public static final double hoodPIDki = 0.0;
-    public static final double hoodPIDkd = 0.0;
-
-    public static final double hoodFFka = 0.0;
-    public static final double hoodFFks = 0.0;
-    public static final double hoodFFkv = 0.0;
-
-    public static final double turretPIDkp = 0.0;
-    public static final double turretPIDki = 0.0;
-    public static final double turretPIDkd = 0.0;
-
-    public static final double turretFFka = 0.0;
-    public static final double turretFFks = 0.0;
-    public static final double turretFFkv = 0.0;
+    public static final int towerID = 0;
   }
 }
