@@ -44,7 +44,6 @@ public class RobotContainer {
   Trigger climbToggle = new JoystickButton(driverController, 1);
   Trigger slow = new JoystickButton(driverController, 6);
   Trigger hold45 = new JoystickButton(driverController, 2);
-  Trigger bobMover = new JoystickButton(driverController, 8);
   Trigger resetHeading = new JoystickButton(driverController, 7);
 
   private RobotConfig config;
@@ -98,7 +97,6 @@ public class RobotContainer {
     // climbToggle.onTrue(new InstantCommand(() -> climber.toggle()));
     slow.whileTrue(new InstantCommand(() -> swerveSubsystem.slowSpeed())).onFalse(new InstantCommand(() -> swerveSubsystem.regularSpeed()));
     hold45.onTrue(new InstantCommand(() -> swerveSubsystem.humpRot()));
-    // bobMover.whileTrue(new InstantCommand(() -> intakeSubsystem.setBob2(1))).onFalse(new InstantCommand(() -> intakeSubsystem.setBob2(0)));
     resetHeading.onTrue(new InstantCommand(() -> swerveSubsystem.resetHeading()));
   }
 

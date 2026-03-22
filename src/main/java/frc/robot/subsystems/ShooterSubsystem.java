@@ -10,6 +10,8 @@ import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.ShooterConstants;
 
@@ -88,17 +90,41 @@ public class ShooterSubsystem extends SubsystemBase {
 
   @Override
   public void periodic() {
+    SmartDashboard.putNumber("Flywheel RPM", getFlywheelRPM());
+    SmartDashboard.putNumber("Hood Pos", getHoodPosition());
+    SmartDashboard.putNumber("Turret Angle", getTurretAngle().getDegrees());
+    SmartDashboard.putNumber("Tower RPM", getTowerRPM());
   }
 
   public void setflywheelRPM(double targetRPM) {
     flywheel.setControl(flywheelRequest.withVelocity(targetRPM / 60));
   }
 
+  public double getFlywheelRPM() {
+    return flywheel.getVelocity().getValueAsDouble() * 60;
+  }
+
+  public void setHoodPosition(double targetPosition) {
+    hood.setControl(hoodRequest.withPosition(targetPosition));
+  }
+
+  public double getHoodPosition() {
+    return hood.getPosition().getValueAsDouble();
+  }
+
+  public void setTurretPosition(double targetPosition) {
+    turret.setControl(turretRequest.withPosition(targetPosition));
+  }
+
+  public Rotation2d getTurretAngle() {
+    return Rotation2d.fromRotations(turret.getPosition().getValueAsDouble() / ShooterConstants.turretGearRatio);
+  }
+
   public void setTowerRPM(double targetRPM) {
     tower.setControl(towerRequest.withVelocity(targetRPM / 60));
   }
 
-  public double getHoodPos() {
-    return hood.getPosition().getValueAsDouble();
+  public double getTowerRPM() {
+    return tower.getVelocity().getValueAsDouble() * 60;
   }
 }

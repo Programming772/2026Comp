@@ -111,11 +111,20 @@ public final class Constants {
   }
 
 
+  public final class IntakeConstants {
+    public static final int feederID = 0;
+    public static final int intakeArmID = 0;
+    public static final int intakeRollerID = 0;
+  }
+
+
   public final class ShooterConstants {
     // flywheel, hood, turret, tower IDs
     public static final int flywheelID = 0;
     public static final int hoodID = 0;
     public static final int turretID = 0;
     public static final int towerID = 0;
+
+    public static final double turretGearRatio = 13;
   }
 }
