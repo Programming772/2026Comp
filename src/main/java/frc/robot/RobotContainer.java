@@ -22,6 +22,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
+import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.commands.TeleoperatedControlCommand;
@@ -44,11 +45,13 @@ public class RobotContainer {
 
   SendableChooser<Command> autoChooser;
 
+  // driver controls
   Trigger climbToggle = new JoystickButton(driverController, 1);
-  Trigger slow = new JoystickButton(driverController, 6);
   Trigger hold45 = new JoystickButton(driverController, 2);
-  Trigger bobMover = new JoystickButton(driverController, 8);
+  Trigger intakeToggle = new JoystickButton(driverController, 3);
+  Trigger slow = new JoystickButton(driverController, 6);
   Trigger resetHeading = new JoystickButton(driverController, 7);
+  Trigger feedingToggle = new JoystickButton(driverController, 5);
 
   // test controls
   Trigger hoodTest = new JoystickButton(testController, 1);
@@ -108,11 +111,24 @@ public class RobotContainer {
   }
 
   private void configureBindings() {
+    // driver controls
     // climbToggle.onTrue(new InstantCommand(() -> climber.toggle()));
-    slow.whileTrue(new InstantCommand(() -> swerveSubsystem.slowSpeed())).onFalse(new InstantCommand(() -> swerveSubsystem.regularSpeed()));
+    
+    slow.whileTrue(new InstantCommand(() -> swerveSubsystem.slowSpeed()))
+    .onFalse(new InstantCommand(() -> swerveSubsystem.regularSpeed()));
+
     hold45.onTrue(new InstantCommand(() -> swerveSubsystem.humpRot()));
-    // bobMover.whileTrue(new InstantCommand(() -> intakeSubsystem.setBob2(1))).onFalse(new InstantCommand(() -> intakeSubsystem.setBob2(0)));
     resetHeading.onTrue(new InstantCommand(() -> swerveSubsystem.resetHeading()));
+
+    intakeToggle.toggleOnTrue(new InstantCommand(() -> intakeSubsystem.setIntakeArmPosition(0)))
+    .toggleOnFalse(new InstantCommand(() -> intakeSubsystem.setIntakeArmPosition(0)));
+    
+    feedingToggle.toggleOnTrue(new InstantCommand(() -> intakeSubsystem.setIntakeRollerRPM(6000))
+    .alongWith(new InstantCommand(() -> intakeSubsystem.setFeederRPM(6000)))
+    .alongWith(new InstantCommand(() -> shooterSubsystem.setTowerRPM(6000))))
+    .toggleOnFalse(new InstantCommand(() -> intakeSubsystem.setIntakeRollerRPM(0))
+    .alongWith(new InstantCommand(() -> intakeSubsystem.setFeederRPM(0)))
+    .alongWith(new InstantCommand(() -> shooterSubsystem.setTowerRPM(0))));
 
     // test controls
     hoodTest.toggleOnTrue(new InstantCommand(() -> shooterSubsystem.setHoodPosition(100))).toggleOnFalse(new InstantCommand(() -> shooterSubsystem.setHoodPosition(0)));
