@@ -25,8 +25,9 @@ import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.commands.TeleoperatedControlCommand;
-// import frc.robot.subsystems.IntakeSubsystem;
-// import frc.robot.subsystems.ShooterSubsystem;
+import frc.robot.subsystems.ShooterSubsystem;
+import frc.robot.subsystems.IntakeSubsystem;
+import frc.robot.subsystems.ShooterSubsystem;
 import frc.robot.subsystems.SwerveDriveSubsystem;
 // import frc.robot.subsystems.VisionSubsystem;
 
@@ -34,17 +35,30 @@ public class RobotContainer {
   // final DoubleSolenoid climber = new DoubleSolenoid(PneumaticsModuleType.CTREPCM, 2, 4);
 
   final SwerveDriveSubsystem swerveSubsystem = new SwerveDriveSubsystem();
-  // final ShooterSubsystem shooterSubsystem = new ShooterSubsystem();
-  // final IntakeSubsystem intakeSubsystem = new IntakeSubsystem();
+  final ShooterSubsystem shooterSubsystem = new ShooterSubsystem();
+  final IntakeSubsystem intakeSubsystem = new IntakeSubsystem();
   // final VisionSubsystem visionSubsystem = new VisionSubsystem();
 
   final Joystick driverController = new Joystick(0);
+  final Joystick testController = new Joystick(1);
+
   SendableChooser<Command> autoChooser;
 
   Trigger climbToggle = new JoystickButton(driverController, 1);
   Trigger slow = new JoystickButton(driverController, 6);
   Trigger hold45 = new JoystickButton(driverController, 2);
+  Trigger bobMover = new JoystickButton(driverController, 8);
   Trigger resetHeading = new JoystickButton(driverController, 7);
+
+  // test controls
+  Trigger hoodTest = new JoystickButton(testController, 1);
+  Trigger turretTest = new JoystickButton(testController, 2);
+  Trigger towerTest = new JoystickButton(testController, 3);
+  Trigger flywheelTest = new JoystickButton(testController, 4);
+  
+  Trigger feederTest = new JoystickButton(testController, 7);
+  Trigger intakeArmTest = new JoystickButton(testController, 5);
+  Trigger intakeRollersTest = new JoystickButton(testController, 6);
 
   private RobotConfig config;
 
@@ -97,7 +111,18 @@ public class RobotContainer {
     // climbToggle.onTrue(new InstantCommand(() -> climber.toggle()));
     slow.whileTrue(new InstantCommand(() -> swerveSubsystem.slowSpeed())).onFalse(new InstantCommand(() -> swerveSubsystem.regularSpeed()));
     hold45.onTrue(new InstantCommand(() -> swerveSubsystem.humpRot()));
+    // bobMover.whileTrue(new InstantCommand(() -> intakeSubsystem.setBob2(1))).onFalse(new InstantCommand(() -> intakeSubsystem.setBob2(0)));
     resetHeading.onTrue(new InstantCommand(() -> swerveSubsystem.resetHeading()));
+
+    // test controls
+    hoodTest.toggleOnTrue(new InstantCommand(() -> shooterSubsystem.setHoodPosition(100))).toggleOnFalse(new InstantCommand(() -> shooterSubsystem.setHoodPosition(0)));
+    turretTest.toggleOnTrue(new InstantCommand(() -> shooterSubsystem.setTurretPosition(90))).toggleOnFalse(new InstantCommand(() -> shooterSubsystem.setTurretPosition(0)));
+    towerTest.toggleOnTrue(new InstantCommand(() -> shooterSubsystem.setTowerRPM(6000))).toggleOnFalse(new InstantCommand(() -> shooterSubsystem.setTowerRPM(0)));
+    flywheelTest.toggleOnTrue(new InstantCommand(() -> shooterSubsystem.setflywheelRPM(6000))).toggleOnFalse(new InstantCommand(() -> shooterSubsystem.setflywheelRPM(0)));
+    
+    feederTest.toggleOnTrue(new InstantCommand(() -> intakeSubsystem.setFeederRPM(6000))).toggleOnFalse(new InstantCommand(() -> intakeSubsystem.setFeederRPM(0)));
+    intakeArmTest.toggleOnTrue(new InstantCommand(() -> intakeSubsystem.setIntakeArmPosition(100))).toggleOnFalse(new InstantCommand(() -> intakeSubsystem.setIntakeArmPosition(0)));
+    intakeRollersTest.toggleOnTrue(new InstantCommand(() -> intakeSubsystem.setIntakeRollerRPM(6000))).toggleOnFalse(new InstantCommand(() -> intakeSubsystem.setIntakeRollerRPM(0)));
   }
 
   public Command getAutonomousCommand() {
