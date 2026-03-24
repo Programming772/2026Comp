@@ -79,6 +79,10 @@ public class IntakeSubsystem extends SubsystemBase {
     return feeder.getVelocity().getValueAsDouble() * 60;
   }
 
+  public void manualFeeder(double speed) {
+    feeder.set(speed);
+  }
+
   public void setIntakeArmPosition(double targetPosition) {
     intakeArm.setControl(intakeArmPosition.withPosition(targetPosition));
   }
@@ -87,11 +91,19 @@ public class IntakeSubsystem extends SubsystemBase {
     return intakeArm.getPosition().getValueAsDouble();
   }
 
+  public void manualIntakePosition(double speed) {
+    intakeArm.set(speed);
+  }
+
   public void setIntakeRollerRPM(double targetRPM) {
     intakeRoller.setControl(intakeRollerRPM.withVelocity(targetRPM / 60));
   }
 
   public double getIntakeRollerRPM() {
     return intakeRoller.getVelocity().getValueAsDouble() * 60;
+  }
+
+  public void manualIntakeRoller(double speed) {
+    intakeRoller.set(speed);
   }
 }

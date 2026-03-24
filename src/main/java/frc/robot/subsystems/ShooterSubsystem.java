@@ -10,6 +10,8 @@ import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
+
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -25,6 +27,10 @@ public class ShooterSubsystem extends SubsystemBase {
   PositionVoltage hoodRequest = new PositionVoltage(0);
   PositionVoltage turretRequest = new PositionVoltage(0);
   VelocityVoltage towerRequest = new VelocityVoltage(0);
+  
+  Boolean canShoot = true;
+  Boolean inMid = false;
+  Boolean shooterReady = false;
   
   public ShooterSubsystem() {
     TalonFXConfiguration flywheelConfig = new TalonFXConfiguration();
@@ -90,6 +96,19 @@ public class ShooterSubsystem extends SubsystemBase {
 
   @Override
   public void periodic() {
+    if (MathUtil.isNear((Rotation2d.fromRotations(turretRequest.Position / ShooterConstants.turretGearRatio)).getDegrees(), getTurretAngle().getDegrees(), 1)
+    && MathUtil.isNear(hoodRequest.Position, getHoodPosition(), 100)
+    && MathUtil.isNear(flywheelRequest.Velocity, getFlywheelRPM(), 100)) {
+      shooterReady = true;
+    } else {
+      shooterReady = false;
+    }
+
+    if (canShoot && !inMid && shooterReady) {
+      setTowerRPM(6000);
+    }
+
+    SmartDashboard.putBoolean("Shooting", canShoot && !inMid && shooterReady);
     SmartDashboard.putNumber("Flywheel RPM", getFlywheelRPM());
     SmartDashboard.putNumber("Hood Pos", getHoodPosition());
     SmartDashboard.putNumber("Turret Angle", getTurretAngle().getDegrees());
@@ -104,6 +123,10 @@ public class ShooterSubsystem extends SubsystemBase {
     return flywheel.getVelocity().getValueAsDouble() * 60;
   }
 
+  public void manualFlywheel(double speed) {
+    flywheel.set(speed);
+  }
+
   public void setHoodPosition(double targetPosition) {
     hood.setControl(hoodRequest.withPosition(targetPosition));
   }
@@ -112,12 +135,20 @@ public class ShooterSubsystem extends SubsystemBase {
     return hood.getPosition().getValueAsDouble();
   }
 
-  public void setTurretPosition(double targetPosition) {
-    turret.setControl(turretRequest.withPosition(targetPosition));
+  public void manualHood(double speed) {
+    hood.set(speed);
+  }
+
+  public void setTurretPosition(Rotation2d targetPosition) {
+    turret.setControl(turretRequest.withPosition(targetPosition.getRotations() * ShooterConstants.turretGearRatio));
   }
 
   public Rotation2d getTurretAngle() {
     return Rotation2d.fromRotations(turret.getPosition().getValueAsDouble() / ShooterConstants.turretGearRatio);
+  }
+
+  public void manualTurret(double speed) {
+    turret.set(speed);
   }
 
   public void setTowerRPM(double targetRPM) {
@@ -126,5 +157,17 @@ public class ShooterSubsystem extends SubsystemBase {
 
   public double getTowerRPM() {
     return tower.getVelocity().getValueAsDouble() * 60;
+  }
+
+  public void manualTower(double speed) {
+    tower.set(speed);
+  }
+
+  public void setCanShoot(boolean canShoot) {
+    this.canShoot = canShoot;
+  }
+
+  public void setInMid(boolean inMid) {
+    this.inMid = inMid;
   }
 }
