@@ -4,9 +4,10 @@
 
 package frc.robot.subsystems;
 
-import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.CANBus;
+import com.ctre.phoenix6.configs.MotionMagicConfigs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
@@ -21,30 +22,16 @@ import frc.robot.Constants.IntakeConstants;
 public class IntakeSubsystem extends SubsystemBase {
   private static final CANBus kCANBus = new CANBus("CANivore");
 
-  TalonFX feeder = new TalonFX(IntakeConstants.feederID);
   TalonFX intakeArm = new TalonFX(IntakeConstants.intakeArmID);
   TalonFX intakeRoller = new TalonFX(IntakeConstants.intakeRollerID, kCANBus);
 
-  VelocityVoltage feederRPM = new VelocityVoltage(0);
-  PositionVoltage intakeArmPosition = new PositionVoltage(0);
+  MotionMagicVoltage intakeArmMotionMagic = new MotionMagicVoltage(0);
   VelocityVoltage intakeRollerRPM = new VelocityVoltage(0);
 
   double intakeSetpoint = 0;
   
   public IntakeSubsystem() {
     intakeArm.setPosition(0);
-    intakeArm.optimizeBusUtilization();
-    BaseStatusSignal.setUpdateFrequencyForAll(
-      50,
-      intakeArm.getPosition()
-    );
-    TalonFXConfiguration feederConfig = new TalonFXConfiguration();
-    feederConfig.CurrentLimits.StatorCurrentLimit = 150;
-    feederConfig.CurrentLimits.SupplyCurrentLimit = 60;
-    feederConfig.MotorOutput.NeutralMode = NeutralModeValue.Coast;
-    feederConfig.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
-    feederConfig.Voltage.PeakForwardVoltage = 12.0;
-    feederConfig.Voltage.PeakReverseVoltage = -12.0;
 
     TalonFXConfiguration intakeArmConfig = new TalonFXConfiguration();
     intakeArmConfig.CurrentLimits.StatorCurrentLimit = 100;
@@ -56,6 +43,7 @@ public class IntakeSubsystem extends SubsystemBase {
     intakeArmConfig.Voltage.PeakReverseVoltage = -12.0;
     intakeArmConfig.MotionMagic.MotionMagicAcceleration = 0;
     intakeArmConfig.MotionMagic.MotionMagicCruiseVelocity = 0;
+    intakeArmConfig.MotionMagic.MotionMagicJerk = 0;
     
     TalonFXConfiguration intakeRollerConfig = new TalonFXConfiguration();
     intakeRollerConfig.CurrentLimits.StatorCurrentLimit = 100;
@@ -65,8 +53,6 @@ public class IntakeSubsystem extends SubsystemBase {
     intakeRollerConfig.Voltage.PeakForwardVoltage = 12.0;
     intakeRollerConfig.Voltage.PeakReverseVoltage = -12.0;
     
-    feeder.getConfigurator().apply(new TalonFXConfiguration());
-    feeder.getConfigurator().apply(feederConfig);
     intakeArm.getConfigurator().apply(new TalonFXConfiguration());
     intakeArm.getConfigurator().apply(intakeArmConfig);
     intakeRoller.getConfigurator().apply(new TalonFXConfiguration());
@@ -75,11 +61,10 @@ public class IntakeSubsystem extends SubsystemBase {
 
   @Override
   public void periodic() {
-    if (MathUtil.isNear(IntakeConstants.intakePos, getIntakePosition(), 0.1) && (intakeArmPosition.getPositionMeasure().magnitude() == IntakeConstants.intakePos)) {
+    if (MathUtil.isNear(IntakeConstants.intakePos, getIntakePosition(), 0.1) && (intakeArmMotionMagic.getPositionMeasure().magnitude() == IntakeConstants.intakePos)) {
       intakeArm.stopMotor();
     }
 
-    SmartDashboard.putNumber("Feeder RPM", getFeederRPM());
     SmartDashboard.putNumber("Intake Pos", getIntakePosition());
     SmartDashboard.putNumber("Intake RPM", getIntakeRollerRPM());
   }
@@ -88,21 +73,9 @@ public class IntakeSubsystem extends SubsystemBase {
     intakeArm.setPosition(0);
   }
 
-  public void setFeederRPM(double targetRPM) {
-    feeder.setControl(feederRPM.withVelocity(targetRPM / 60));
+  public void setIntakeArmPosition(double targetPosition) {
+    intakeArm.setControl(intakeArmMotionMagic.withPosition(targetPosition).withSlot(0));
   }
-
-  public double getFeederRPM() {
-    return feeder.getVelocity().getValueAsDouble() * 60;
-  }
-
-  public void manualFeeder(double speed) {
-    feeder.set(speed);
-  }
-
-  // public void setIntakeArmPosition(double targetPosition) {
-  //   intakeArm.setControl(new PositionVoltage(targetPosition).withSlot(0));
-  // }
 
   public double getIntakePosition() {
     return intakeArm.getPosition().getValueAsDouble();

@@ -6,6 +6,8 @@ package frc.robot;
 
 import static edu.wpi.first.units.Units.Rotations;
 
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -19,6 +21,8 @@ import edu.wpi.first.units.measure.Angle;
 public final class Constants {
   // object for trajectory generation configs
   public static final TrajectoryConfig pathConfig = new TrajectoryConfig(3, 1);
+
+  public static final Pose2d hubCoords = new Pose2d(4.625, 4.030, Rotation2d.fromDegrees(0));
 
 
   public final class SwerveConstants {

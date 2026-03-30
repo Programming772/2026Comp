@@ -48,6 +48,7 @@ public class RobotContainer {
   // Trigger midShooting = new JoystickButton(driverController, 5);
   Trigger toggleShooting = new JoystickButton(driverController, 6);
   Trigger autoAim = new JoystickButton(driverController, 10);
+  Trigger aimAtHub = new JoystickButton(driverController, 2);
 
   Trigger manualTurretCCW = new JoystickButton(testController, 5);
   Trigger manualTurretCW = new JoystickButton(testController, 6);
@@ -150,6 +151,8 @@ public class RobotContainer {
     //.alongWith(new InstantCommand(() -> intakeSubsystem.manualFeeder(0.3))))
     .onFalse(new InstantCommand(() -> intakeSubsystem.manualIntakeRoller(0)));
     //.alongWith(new InstantCommand(() -> intakeSubsystem.manualFeeder(0))));
+
+    aimAtHub.onTrue(new InstantCommand(() -> swerveSubsystem.rotateToHub()));
 
 
     // test controls

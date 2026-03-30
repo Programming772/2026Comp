@@ -4,6 +4,8 @@
 
 package frc.robot.subsystems;
 
+import org.photonvision.PhotonUtils;
+
 import com.ctre.phoenix6.hardware.Pigeon2;
 import com.ctre.phoenix6.signals.InvertedValue;
 import edu.wpi.first.math.MathUtil;
@@ -304,5 +306,12 @@ public class SwerveDriveSubsystem extends SubsystemBase {
         VecBuilder.fill(xyStdDev, xyStdDev, thetaStdDev)
       );
     }
+  }
+
+  public void rotateToHub () {
+    Pose2d robotPose = poseEstimator.getEstimatedPosition();
+    Rotation2d yaw = PhotonUtils.getYawToPose(robotPose, Constants.hubCoords);
+
+    setTargetRot(robotPose.getRotation().plus(yaw).plus(Rotation2d.k180deg));
   }
 }

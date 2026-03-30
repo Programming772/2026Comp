@@ -23,33 +23,50 @@ public class ShooterSubsystem extends SubsystemBase {
 
   public ShooterSubsystem() {
     //turret.setPosition(0);
-    TalonFXConfiguration flywheelConfig = new TalonFXConfiguration();
-    flywheelConfig.CurrentLimits.StatorCurrentLimit = 100;
-    flywheelConfig.CurrentLimits.SupplyCurrentLimit = 60;
-    flywheelConfig.Slot0.kS = 0;
-    flywheelConfig.Slot0.kV = 0.1275;
-    flywheelConfig.Slot0.kP = 0.367;
-    flywheelConfig.Slot0.kI = 0;
-    flywheelConfig.Slot0.kD = 0;
-    flywheelConfig.MotorOutput.NeutralMode = NeutralModeValue.Coast;
-    flywheelConfig.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
-    flywheelConfig.Voltage.PeakForwardVoltage = 12.0;
-    flywheelConfig.Voltage.PeakReverseVoltage = -12.0;
+    TalonFXConfiguration flywheel1Config = new TalonFXConfiguration();
+    flywheel1Config.CurrentLimits.StatorCurrentLimit = 100;
+    flywheel1Config.CurrentLimits.SupplyCurrentLimit = 60;
+    flywheel1Config.Slot0.kS = 0;
+    flywheel1Config.Slot0.kV = 0;
+    flywheel1Config.Slot0.kP = 0;
+    flywheel1Config.Slot0.kI = 0;
+    flywheel1Config.Slot0.kD = 0;
+    flywheel1Config.MotorOutput.NeutralMode = NeutralModeValue.Coast;
+    flywheel1Config.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
+    flywheel1Config.Voltage.PeakForwardVoltage = 12.0;
+    flywheel1Config.Voltage.PeakReverseVoltage = -12.0;
 
+    TalonFXConfiguration flywheel2Config = new TalonFXConfiguration();
+    flywheel2Config.CurrentLimits.StatorCurrentLimit = 100;
+    flywheel2Config.CurrentLimits.SupplyCurrentLimit = 60;
+    flywheel2Config.Slot0.kS = 0;
+    flywheel2Config.Slot0.kV = 0;
+    flywheel2Config.Slot0.kP = 0;
+    flywheel2Config.Slot0.kI = 0;
+    flywheel2Config.Slot0.kD = 0;
+    flywheel2Config.MotorOutput.NeutralMode = NeutralModeValue.Coast;
+    flywheel2Config.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
+    flywheel2Config.Voltage.PeakForwardVoltage = 12.0;
+    flywheel2Config.Voltage.PeakReverseVoltage = -12.0;
+    
     TalonFXConfiguration towerConfig = new TalonFXConfiguration();
     towerConfig.CurrentLimits.StatorCurrentLimit = 100;
     towerConfig.CurrentLimits.SupplyCurrentLimit = 60;
-    flywheelConfig.Slot0.kS = 0;
-    flywheelConfig.Slot0.kV = 0;
-    flywheelConfig.Slot0.kP = 0;
-    flywheelConfig.Slot0.kI = 0;
-    flywheelConfig.Slot0.kD = 0;
+    towerConfig.Slot0.kS = 0;
+    towerConfig.Slot0.kV = 0;
+    towerConfig.Slot0.kP = 0;
+    towerConfig.Slot0.kI = 0;
+    towerConfig.Slot0.kD = 0;
     towerConfig.MotorOutput.NeutralMode = NeutralModeValue.Coast;
     towerConfig.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
     towerConfig.Voltage.PeakForwardVoltage = 12.0;
     towerConfig.Voltage.PeakReverseVoltage = -12.0;
 
     // applies the configs to the motors
+    flywheel1.getConfigurator().apply(new TalonFXConfiguration());
+    flywheel1.getConfigurator().apply(flywheel1Config);
+    flywheel2.getConfigurator().apply(new TalonFXConfiguration());
+    flywheel2.getConfigurator().apply(flywheel2Config);
     tower.getConfigurator().apply(new TalonFXConfiguration());
     tower.getConfigurator().apply(towerConfig);
   }
