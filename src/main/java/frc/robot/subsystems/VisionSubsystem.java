@@ -4,86 +4,86 @@
 
 package frc.robot.subsystems;
 
-import java.util.Arrays;
-import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import org.photonvision.EstimatedRobotPose;
+import org.photonvision.PhotonCamera;
+import org.photonvision.PhotonPoseEstimator;
+import org.photonvision.PhotonPoseEstimator.PoseStrategy;
 import org.photonvision.targeting.PhotonPipelineResult;
 import org.photonvision.targeting.PhotonTrackedTarget;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.apriltag.AprilTagFieldLayout;
+import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
+import frc.robot.VisionMeasurement;
 
 public class VisionSubsystem extends SubsystemBase {  
-  // objects instantiation for vision logic
-  public Camera[] cameras = new Camera[Constants.cameraNames.length];
+  private final List<PhotonCamera> cameras = new ArrayList<>();
+  private final List<PhotonPoseEstimator> poseEstimators = new ArrayList<>();
 
-  private Map<String, List<PhotonPipelineResult>> results = new HashMap<String, List<PhotonPipelineResult>>();
-  private Map<String, List<PhotonTrackedTarget>> aprilTags = new HashMap<String, List<PhotonTrackedTarget>>();
-  
   public VisionSubsystem() {
-    for (int i = 0; i < cameras.length; i++) {
-      cameras[i] = new Camera(Constants.cameraNames[i], Constants.cameraPositions[i]);
-    } 
-  }
+    AprilTagFieldLayout fieldLayout = AprilTagFields.kDefaultField.loadAprilTagLayoutField();
 
-  @Override
-  public void periodic() {
-    Map<String, List<PhotonPipelineResult>> newResults = new HashMap<String, List<PhotonPipelineResult>>();
-    
-    // retrieves all new results for each camera on the robot
-    for (Camera camera : cameras) {
-      newResults.put(camera.getName(), camera.getResults());
-    }
+    for (int i = 0; i < Constants.VisionConstants.cameraNames.length; i++) {
 
-    if (!(newResults.isEmpty())) {
-      results = newResults;
-    }
+      PhotonCamera camera = new PhotonCamera(Constants.VisionConstants.cameraNames[i]);
 
-    for (int i = 0; i < aprilTags.size(); i++) {
-      double[] tagIDs = new double[aprilTags.get(Constants.cameraNames[i]).size()];
+      PhotonPoseEstimator estimator = new PhotonPoseEstimator(
+        fieldLayout,
+        PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
+        Constants.VisionConstants.cameraPositions[i]
+      );
 
-      // gets the ID of each seen April tag
-      for (int k = 0; k < tagIDs.length; k++) {
-        tagIDs[k] = aprilTags.get(Constants.cameraNames[i]).get(k).getFiducialId();
-      }
+      estimator.setMultiTagFallbackStrategy(PoseStrategy.LOWEST_AMBIGUITY);
 
-      // displays the seen april tags on Shuffleboard
-      SmartDashboard.putString("April Tags", Arrays.toString(tagIDs));
+      cameras.add(camera);
+      poseEstimators.add(estimator);
     }
   }
 
-  public Map<String, List<PhotonTrackedTarget>> getAprilTags() {
-    Map<String, List<PhotonTrackedTarget>> aprilTags = new HashMap<>();
+  public List<VisionMeasurement> getVisionMeasurements() {
+  List<VisionMeasurement> measurements = new ArrayList<>();
 
-    for (Camera camera : cameras) {
-      List<PhotonPipelineResult> cameraResults = results.get(camera.getName());
-      if (cameraResults == null) continue;
+  for (int i = 0; i < cameras.size(); i++) {
+    PhotonCamera camera = cameras.get(i);
+    PhotonPoseEstimator estimator = poseEstimators.get(i);
+    PhotonPipelineResult result = camera.getLatestResult();
 
-      for (PhotonPipelineResult result : cameraResults) {
-        aprilTags.put(camera.getName(), result.getTargets());
-      }
+    if (!result.hasTargets())
+      continue;
+
+    if (result.getTargets().size() < Constants.VisionConstants.MIN_TAGS)
+      continue;
+
+    PhotonTrackedTarget bestTarget = result.getBestTarget();
+
+    if (bestTarget.getPoseAmbiguity() > Constants.VisionConstants.MAX_AMBIGUITY)
+      continue;
+
+    double avgDistance = 0;
+
+    for (PhotonTrackedTarget t : result.getTargets()) {
+      avgDistance += t.getBestCameraToTarget().getTranslation().getNorm();
     }
-    
-    return aprilTags;
+
+    avgDistance /= result.getTargets().size();
+
+    if (avgDistance > Constants.VisionConstants.MAX_DISTANCE_METERS)
+      continue;
+
+    var estimatedPose = estimator.update(result);
+
+    if (estimatedPose.isPresent()) {
+      int tagCount = result.getTargets().size();
+
+      measurements.add(new VisionMeasurement(
+        estimatedPose.get(),
+        avgDistance,
+        tagCount)
+      );
+    }
   }
 
-  public Optional<EstimatedRobotPose> getEstimatedPose() {
-    for (Camera camera : cameras) {
-    List<PhotonPipelineResult> cameraResults = results.get(camera.getName());
-    if (cameraResults == null) continue;
-
-    for (PhotonPipelineResult multiTag : cameraResults) {
-      Optional<EstimatedRobotPose> pose = camera.getPoseEstimator().update(multiTag);
-      
-      if (pose.isPresent()) {
-        return pose; // return first valid pose
-      }
-    }
-  }
-
-  return Optional.empty();
+  return measurements;
   }
 }

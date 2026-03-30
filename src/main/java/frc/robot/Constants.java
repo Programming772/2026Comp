@@ -17,14 +17,6 @@ import edu.wpi.first.units.measure.Angle;
 
 
 public final class Constants {
-  // array of all connected cameras
-  public static final String[] cameraNames = {"Front"};
-
-  public static final Transform3d[] cameraPositions = {
-    new Transform3d(new Translation3d(Units.inchesToMeters(12.5), Units.inchesToMeters(8), Units.inchesToMeters(9.2)), new Rotation3d(0, 0, 0)), // arduCam 1
-    new Transform3d(new Translation3d(Units.inchesToMeters(-13.5), Units.inchesToMeters(-8), Units.inchesToMeters(9.2)), new Rotation3d(180, 0, 0)) // arduCam 2
-  };
-
   // object for trajectory generation configs
   public static final TrajectoryConfig pathConfig = new TrajectoryConfig(3, 1);
 
@@ -111,20 +103,41 @@ public final class Constants {
   }
 
 
-  public final class IntakeConstants {
-    public static final int feederID = 0;
-    public static final int intakeArmID = 0;
-    public static final int intakeRollerID = 0;
+  public static final class IntakeConstants {
+    public static final int feederID = 14;
+    public static final int intakeArmID = 34;
+    public static final int intakeRollerID = 35;
+    public static final double intakePos = -1.28;
+    public static final double restPos = -0.75;
+    public static final double horizontalPos = 1.43;
+    public static final double ground = 1.7;
+
   }
 
 
-  public final class ShooterConstants {
+  public static final class ShooterConstants {
     // flywheel, hood, turret, tower IDs
-    public static final int flywheelID = 0;
-    public static final int hoodID = 0;
-    public static final int turretID = 0;
-    public static final int towerID = 0;
+    public static final int flywheel1ID = 31;
+    public static final int flywheel2ID = 0;
+    public static final int towerID = 33;
 
-    public static final double turretGearRatio = 13;
+    public static final int flywheelTest = 4000;
+  }
+
+
+  public static final class VisionConstants {
+    // array of all connected cameras
+    public static final String[] cameraNames = {"Turret"};
+
+    public static final Transform3d[] cameraPositions = {
+      new Transform3d(new Translation3d(Units.inchesToMeters(0), Units.inchesToMeters(0), Units.inchesToMeters(18.75)), new Rotation3d(0, 0, 0)), // turret cam
+    };
+
+    public static final int MIN_TAGS = 2;
+    public static final double MAX_AMBIGUITY = 0.2;
+    public static final double MAX_DISTANCE_METERS = 5.0;
+    public static final double BASE_XY_STD_DEV = 0.05;
+    public static final double BASE_THETA_STD_DEV = 0.1;
+    public static final double MAX_POSE_JUMP_METERS = 1.5;
   }
 }

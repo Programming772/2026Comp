@@ -4,6 +4,7 @@
 
 package frc.robot.subsystems;
 
+import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.hardware.CANcoder;
@@ -28,6 +29,8 @@ import frc.robot.Constants.SwerveConstants;
  * @author Koltin Scane
  */
 public class SwerveModuleSubsystem extends SubsystemBase {
+  private static final CANBus kCANBus = new CANBus("CANivore");
+
   // objects and variables instantiation
   public TalonFX m_propulsionMotor, m_turningMotor;
   public CANcoder m_encoder;
@@ -42,8 +45,8 @@ public class SwerveModuleSubsystem extends SubsystemBase {
 
   public SwerveModuleSubsystem(int propulsionMotorID, int turningMotorID, int encoderID, Angle encoderOffset,
       boolean encoderReversed, InvertedValue driveInverted, InvertedValue turningInverted) {
-    m_propulsionMotor = new TalonFX(propulsionMotorID);
-    m_turningMotor = new TalonFX(turningMotorID);
+    m_propulsionMotor = new TalonFX(propulsionMotorID, kCANBus);
+    m_turningMotor = new TalonFX(turningMotorID, kCANBus);
 
     // defines configs for the turning motors
     TalonFXConfiguration driveConfig = new TalonFXConfiguration();
@@ -78,7 +81,7 @@ public class SwerveModuleSubsystem extends SubsystemBase {
     m_turningMotor.getConfigurator().apply(turningConfig);
 
     // makes a new absolute encoder, get the
-    m_encoder = new CANcoder(encoderID);
+    m_encoder = new CANcoder(encoderID, kCANBus);
     m_encoderOffset = encoderOffset;
     m_encoderReversed = encoderReversed;
     

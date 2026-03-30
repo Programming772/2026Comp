@@ -22,6 +22,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
 import frc.robot.Constants.SwerveConstants;
+import frc.robot.Constants.VisionConstants;
 
 /**
  * Represents a full Swerve Drive.
@@ -71,13 +72,13 @@ public class SwerveDriveSubsystem extends SubsystemBase {
     )
   };
 
-  // private final VisionSubsystem visionSubsystem = new VisionSubsystem();
   public final Pigeon2 gyro = new Pigeon2(SwerveConstants.pigeonID);
   private final PIDController thetaPID = new PIDController(SwerveConstants.thetaPIDkp, SwerveConstants.thetaPIDki, SwerveConstants.thetaPIDkd);
   private Field2d field = new Field2d();
   private Rotation2d targetRot = getRotation();
   private boolean slowDown = false;
   private boolean isHeadingLocked = true;
+  private VisionSubsystem vision = new VisionSubsystem();
   
   // creates a pose estimator object to get the position of the robot relative to the field
   public final SwerveDrivePoseEstimator poseEstimator = new SwerveDrivePoseEstimator(
@@ -105,17 +106,8 @@ public class SwerveDriveSubsystem extends SubsystemBase {
   public void periodic() {
     // pose estimation relative to robot sensors and vision
     updateOdometryRobotRelative();
-    // Optional<EstimatedRobotPose> visionPose = visionSubsystem.getEstimatedPose();
+    addVisionMeasurements();
 
-    // if (visionPose.isPresent()) {
-    //   EstimatedRobotPose estimate = visionPose.get();
-
-    //   // Only trust multi-tag
-    //   if (estimate.targetsUsed.size() >= 2) {
-    //     poseEstimator.addVisionMeasurement(estimate.estimatedPose.toPose2d(), estimate.timestampSeconds);
-    //   }
-    // }
-    
     // updates the minifield on Shuffle board to the estimated position of the bot
     field.setRobotPose(poseEstimator.getEstimatedPosition());
 
@@ -221,7 +213,7 @@ public class SwerveDriveSubsystem extends SubsystemBase {
       targetRot = getRotation();
     }
 
-    thetaSpeed = MathUtil.clamp(thetaSpeed, -1.5, 1.5);
+    thetaSpeed = MathUtil.clamp(thetaSpeed, -4, 4);
     
     ChassisSpeeds chassisSpeeds = ChassisSpeeds.fromFieldRelativeSpeeds(xSpeed, ySpeed, thetaSpeed, getRotation());
     ChassisSpeeds discretizedSpeeds = ChassisSpeeds.discretize(chassisSpeeds, 0.02);
@@ -230,8 +222,8 @@ public class SwerveDriveSubsystem extends SubsystemBase {
   }
 
   /**
-   * 
-   * @param speeds
+   * Sets the states of each swerve module relative to the given chassis speeds while also applying an optional slow speed. 
+   * @param speeds The target chassis speeds of the swerve drive.
    */
   public void setSpeeds(ChassisSpeeds speeds) {
     SwerveModuleState[] states =
@@ -253,21 +245,64 @@ public class SwerveDriveSubsystem extends SubsystemBase {
     }
   }
 
+  /**
+   * Toggles slowed down swerve drive speeds to true.
+   */
   public void slowSpeed() {
     slowDown = true;
   }
 
+  /**
+   * Toggles slowed down swerve drive speeds to false.
+   */
   public void regularSpeed() {
     slowDown = false;
   }
 
+  /**
+   * Sets the setpoint of the swerve drive rotation to the given angle.
+   * @param angle Target swerve drive angle.
+   */
   public void setTargetRot(Rotation2d angle) {
     targetRot = angle;
   }
 
+  /**
+   * Finds the closest 45 degree angle for the swerve drive to hold for safe bumb mobility. 
+   */
   public void humpRot() {
     double currentAngle = getRotation().getDegrees();
 
     targetRot = Rotation2d.fromDegrees(45 + 90 * Math.floor(currentAngle / 90));
+  }
+
+  private void addVisionMeasurements() {
+    for (var measurement : vision.getVisionMeasurements()) {
+      var visionPose = measurement.pose.estimatedPose.toPose2d();
+      double timestamp = measurement.pose.timestampSeconds;
+      double distance = measurement.avgTagDistance;
+      int tagCount = measurement.tagCount;
+      var currentPose = poseEstimator.getEstimatedPosition();
+
+      if (visionPose.getTranslation().getDistance(currentPose.getTranslation()) > VisionConstants.MAX_POSE_JUMP_METERS)
+        continue;
+
+      double xyStdDev = VisionConstants.BASE_XY_STD_DEV;
+      double thetaStdDev = VisionConstants.BASE_THETA_STD_DEV;
+
+      xyStdDev *= distance;
+      thetaStdDev *= distance;
+
+      if (tagCount > 1) {
+        xyStdDev /= tagCount;
+        thetaStdDev /= tagCount;
+      }
+
+      poseEstimator.addVisionMeasurement(
+        visionPose,
+        timestamp,
+        VecBuilder.fill(xyStdDev, xyStdDev, thetaStdDev)
+      );
+    }
   }
 }
